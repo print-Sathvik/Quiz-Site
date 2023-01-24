@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <link href="/css/styles.css" rel="stylesheet">
+    <title>Online Voting Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        var token = document.querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+        function deleteQuestion(id)
+        {
+            fetch(`/questions/manage/${id}`, {
+                method: "delete",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    "_csrf": token
+                })
+            })
+            .then((res) => {
+                if(res.ok) {
+                    window.location.reload();
+                }
+            })
+            .catch((err) => console.error(err));
+        }
+    </script>
+
+</head>
+<body>
+    <%- include('header.ejs') %>
+    <div class="centerElement">
+        <a href="/elections/manage/<%= electionId %>/newQuestion"><button type="button" class="bg-green-600 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2">New Question</button></a>
+    </div>
+    <div class="grid grid-cols-6">
+        <div class="col-start-2 col-span-3">
+            <% if(messages && messages.success && messages.success.length > 0)  { %>
+                <% for(var i=0; i<messages.success.length; i++) { %>
+                        <p class="flash-success"> <%= messages.success[i] %></p>
+                <% } %>
+            <% } %>
+            <% if(messages && messages.error && messages.error.length > 0)  { %>
+                <% for(var i=0; i<messages.error.length; i++) { %>
+                        <p class="flash-error"> <%= messages.error[i] %></p>
+                <% } %>
+            <% } %>
+            <div>
+                <% for(var i=0; i < questions.length; i++) { %>
+                    <div class="py-2">
+                        <h3 class="ml-2 text-xl text-black-900 font-bold"><%= i+1 %>. <%= questions[i].title%>
+                            <a href="/questions/manage/<%= questions[i].id %>/editQuestion" class="px-3 ml-2 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="blue" class="w-5 h-5 inline">
+                                    <path d="M5.433 13.917l1.262-3.155A4 4 0 017.58 9.42l6.92-6.918a2.121 2.121 0 013 3l-6.92 6.918c-.383.383-.84.685-1.343.886l-3.154 1.262a.5.5 0 01-.65-.65z" />
+                                    <path d="M3.5 5.75c0-.69.56-1.25 1.25-1.25H10A.75.75 0 0010 3H4.75A2.75 2.75 0 002 5.75v9.5A2.75 2.75 0 004.75 18h9.5A2.75 2.75 0 0017 15.25V10a.75.75 0 00-1.5 0v5.25c0 .69-.56 1.25-1.25 1.25h-9.5c-.69 0-1.25-.56-1.25-1.25v-9.5z" />
+                                </svg>
+                            </a>
+                            <a href="#" class="ml-2 cursor-pointer" onclick="deleteQuestion(<%= questions[i].id %>)">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="red" class="w-5 h-5 inline">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                </svg>
+                            </a>
+                        </h3>
+                        <p class="px-8"><%= questions[i].description %></p>
+                        <% for(var j=0; j < options.length; j++) {
+                            if(options[j].length != 0 && options[j][0].questionId == questions[i].id) { %>
+                                <% for(var k=0; k < options[j].length; k++) { %>
+                                    <input type="radio" disabled id="<%= `q${questions[i].id}o${options[j][k].id}` %>" name="<%= `q${questions[i].id}` %>" class="default:border-green-500" style="margin-left: 30px">
+                                    <label for="<%= `q${questions[i].id}o${options[j][k].id}` %>" class="text-xl"><%= options[j][k].option %></label>
+                                    <br>
+                                <% } %>
+                            <% } %>
+                        <% } %>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

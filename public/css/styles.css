@@ -1,0 +1,92 @@
+body {
+  font-family: "Times New Roman", Times, serif;
+}
+
+.voter:hover .trash-icon {
+  display: block;
+}
+
+.inline {
+  display: inline;
+}
+
+.menuBackground {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #333;
+}
+
+.floatRight {
+  float: right;
+}
+
+.menuitem {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  float: right;
+  text-decoration: none;
+}
+
+.activePage {
+  background-color: #04aa6d;
+}
+
+.centerElement {
+  text-align: center;
+}
+
+radiobutton {
+  appearance: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgb(104, 103, 103);
+  transition: 0.3s all linear;
+  position: relative;
+  margin-left: 30px;
+}
+
+radiobutton:checked {
+  border: 6px solid black;
+}
+
+th,
+td {
+  padding-right: 15px;
+}
+
+.menuBackground2 {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  width: fit-content;
+  background-color: yellow;
+}
+
+.menuitem2 {
+  display: block;
+  color: black;
+  text-align: center;
+  padding: 14px 16px;
+  float: left;
+  text-decoration: none;
+}
+
+.flash-success {
+  background-color: rgb(90, 252, 40);
+  margin-top: 10px;
+  padding: 3px;
+  width: fit-content;
+}
+
+.flash-error {
+  background-color: rgb(250, 121, 121);
+  margin-top: 10px;
+  padding: 3px;
+  width: fit-content;
+}

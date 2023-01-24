@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <link href="/css/styles.css" rel="stylesheet">
+    <title>To-Do Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        var token = document.querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+    </script>
+
+</head>
+<body>
+    <%- include('header.ejs') %>
+    <div class="grid grid-cols-6">
+        <div class="col-start-3 col-span-2">
+            <form action="/addVoter" method="post">
+                <% if(messages && messages.error && messages.error.length > 0)  { %>
+                    <% for(var i=0; i<messages.error.length; i++) { %>
+                            <p class="flash-error"> <%= messages.error[i] %></p>
+                    <% } %>
+                  <% } %>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <input type="hidden" name="electionId" value="<%= electionId %>" />
+                <div class="flex gap-2 py-4">
+                    <div class="flex-auto">
+                        <input type="text" name="voterId" placeholder="Voter ID?" class="border border-gray-300 rounded text-gray-900 w-full p-2 text-sm"/>
+                    </div>
+                    <div class="flex-auto">
+                        <input type="password" name="password" placeholder="Password" required class="border border-gray-300 rounded text-gray-900 w-full p-2 text-sm" />
+                    </div>
+                    <div class="flex-none">
+                        <button type="submit" class="bg-green-600 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2">Add</button>
+                    </div>
+                </div>
+            </form>
+            <div>
+                <ul class="list-none">
+                    <% for(var i=0; i < allVoters.length; i++) { %>
+                        <li  class="voter">
+                            <div class="flex items-center w-fit my-2 px-2 py-1 rounded hover:bg-purple-50">
+                                <label class="ml-2 text-sm text-gray-600 cursor-pointer"><%= allVoters[i].voterId%></label>
+                                <!--<a href="#" class="hidden trash-icon ml-2" onclick=`deleteVoter(<%= allVoters[i].id %>)`>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                    </svg>
+                                </a>-->
+                            </div>
+                        </li> 
+                    <% } %>
+                </ul>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

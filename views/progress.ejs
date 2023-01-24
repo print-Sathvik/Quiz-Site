@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <link href="/css/styles.css" rel="stylesheet">
+    <title>Online Voting Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+</head>
+
+<body>
+    <%- include('header.ejs') %>
+    <% let optionsGraph = [];
+    let optionsCountGraph = []; %>
+    <h1 class="text-4xl centerElement"><%= message %></h1>
+    <h1 class="text-2xl centerElement">Total Voters: <%= totalVoters %></h1>
+    <h1 class="text-2xl centerElement">No of voters polled: <%= voted %></h1>
+    <h1 class="text-2xl centerElement">Voters remaining: <%= totalVoters - voted %></h1>
+    <div class="grid grid-cols-6">
+        <div class="col-start-2 col-span-4">
+            <br>
+            <div class="menuBackground2 justify-items-center">
+                <a class="menuitem2" href="/election/<%= electionId %>/status/bar">Bar</a>
+                <a class="menuitem2" href="/election/<%= electionId %>/status/pie">Pie</a>
+                <a class="menuitem2" href="/election/<%= electionId %>/status/doughnut">Doughnut</a>
+            </div>
+            <div>
+                <% for(var i=0; i < questions.length; i++) { 
+                    optionsGraph = [];
+                    optionsCountGraph = []; %>
+                    <% if(messages && messages.error && messages.error.length > 0)  { %>
+                        <% for(var i=0; i<messages.error.length; i++) { %>
+                                <p class="flash-error"> <%= messages.error[i] %></p>
+                        <% } %>
+                      <% } %>
+                    <div class="py-2">
+                        <h3 class="ml-2 text-xl text-black-900 font-bold"><%= i+1 %>. <%= questions[i].title%></h3>
+                        <p class="px-8"><%= questions[i].description %></p>
+                        <table>
+                        <% for(var j=0; j < options.length; j++) {
+                            if(options[j].length != 0 && options[j][0].questionId == questions[i].id) { %>
+                                <% let max = optionsCount[j][0];
+                                for(var k=0; k < options[j].length; k++) {
+                                    if(optionsCount[j][k] > max) { max = optionsCount[j][k] }
+                                }
+                                for(var k=0; k < options[j].length; k++) { %>
+                                    <tr class=<%= max == optionsCount[j][k] ? "bg-green-400" : "" %>>
+                                        <td><input type="radio" disabled id="<%= `q${questions[i].id}o${options[j][k].id}` %>" name="<%= `q${questions[i].id}` %>" class="default:border-green-500" style="margin-left: 30px">
+                                        <label for="<%= `q${questions[i].id}o${options[j][k].id}` %>" class="text-xl"><%= options[j][k].option %></label></td>
+                                        <td class="text-xl px-8"><%= optionsCount[j][k] %></td>
+                                        <% optionsGraph.push(options[j][k].option);
+                                        optionsCountGraph.push(optionsCount[j][k]); %>
+                                    </tr>
+                                <% } %>
+                            <% } %>
+                        <% } %>
+                        </table>
+                        <canvas id="myChart<%= i %>" style="max-width:300px" class="inline"></canvas>
+                        <script>
+                            var xValues = "<%= optionsGraph %>".split(",");
+                            var yValues = "<%= optionsCountGraph %>".split(",").map(function(str) { return parseInt(str); });
+                            var barColors = ["red", "green","blue","orange","brown","pink","cyan","yellow","magenta"];
+                            new Chart("myChart<%= i %>", {
+                                type: "<%= chartType %>",
+                                data: {
+                                    labels: xValues,
+                                    datasets: [{
+                                    backgroundColor: barColors,
+                                    data: yValues
+                                    }]
+                                },
+                                <% if(chartType == "bar") { %>
+                                    options: {
+                                        legend: {display: false},
+                                        scales: {
+                                            yAxis: {
+                                                ticks: {
+                                                    precision: 0
+                                                }
+                                            }
+                                        }
+                                    }
+                                <% } %>
+                            });
+                        </script>
+                        <br>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</body>

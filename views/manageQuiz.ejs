@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <link href="/css/styles.css" rel="stylesheet">
+    <title>GOSC Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <%- include('header.ejs') %>
+    <div class="grid grid-cols-6">
+        <div class="col-start-2 col-span-3">
+            <h1 class="text-2xl py-4 centerElement"><%= quizTitle %></h1>
+            <% if(messages && messages.error && messages.error.length > 0)  { %>
+                <% for(var i=0; i<messages.error.length; i++) { %>
+                        <p class="flash-error"> <%= messages.error[i] %></p>
+                <% } %>
+              <% } %>
+            <h3 class="text-lg py-2 text-red-600">Share this Key with the participants: <%= key %></h3>
+            <p>Time Limit for each question: <%= timer %></p>
+            <p>Score of each question: <%= score %></p>
+            <p>Penalty for each hint: <%=penalty%></p>
+            <div>
+                <p class="text-green-600 text-lg py-6"><a href="/quiz/manage/<%= quizId %>/managePlayers">Manage Participants</a></p>
+                <p class="text-green-600 text-lg py-6"><a href="/quiz/manage/<%= quizId %>/manageQuestions">Manage Questions</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

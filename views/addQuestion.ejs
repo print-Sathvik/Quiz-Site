@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <link href="/css/styles.css" rel="stylesheet">
+    <title>Online Voting Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        input[type=text] {
+        padding: 12px 15px;
+        margin: 8px 0;
+        border: 2px solid black;
+        border-radius: 4px;
+        }
+    </style>
+    <script>
+        var token = document.querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+        let textBoxId = 2;
+        function addTextBox()
+        {
+            var t=document.createElement("input");
+            t.type="text";
+            textBoxId++;
+            t.id="option" + textBoxId;
+            t.name="option" + textBoxId;
+            id = "option" + textBoxId;
+            var l = document.createElement("label");
+            l.id = "label" + textBoxId
+            l.for = id;
+            l.innerHTML = "Option " + textBoxId + ": ";
+            var textBox = document.getElementById(id);
+            document.getElementById("optionsDiv").appendChild(l);
+            document.getElementById("optionsDiv").appendChild(t);
+            document.getElementById("optionsDiv").appendChild(document.createElement("br"));
+        }
+        function deleteTextBox()
+        {
+            var t=document.getElementById("option"+textBoxId);
+            var l=document.getElementById("label"+textBoxId);
+            var b = document.getElementsByTagName("br")
+            if(textBoxId == 2) {
+                console.log("Should have atleast two options");
+                alert("Should have atleast two options");
+                throw "Should have atleast two options";
+            }
+            document.getElementById("optionsDiv").removeChild(t);
+            document.getElementById("optionsDiv").removeChild(l);
+            document.getElementById("optionsDiv").removeChild(b[b.length-1]);
+            textBoxId--;
+        }
+    </script>
+</head>
+<body>
+    <%- include('header.ejs') %>
+    <div class="grid grid-cols-6">
+        <div class="col-start-2 col-span-3">
+            <form action="/addQuestion" method="post">
+                <% if(messages && messages.error && messages.error.length > 0)  { %>
+                    <% for(var i=0; i<messages.error.length; i++) { %>
+                            <p class="flash-error"> <%= messages.error[i] %></p>
+                    <% } %>
+                  <% } %>
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <input type="hidden" name="electionId" value="<%= electionId %>" />
+                <div class="py-4">
+                    <div class="py-2">
+                        <label for="title">Question:</label>
+                        <input type="text" name="title" placeholder="Question Goes Here...." class="border border-gray-300 text-black-900 rounded p-2 w-full">
+                    </div>
+                    <div class="py-2">
+                        <label for="description">Description:</label>
+                        <textarea name="description" rows="5" placeholder="Describe your question...." class="border border-gray-300 rounded text-black-900 w-full p-2 text-sm"></textarea>
+                    </div>
+                    <div id="optionsDiv">
+                        <% for(let i=0; i < 2; i++) { %>
+                            <label for="option<%= i+1 %>" id="label<%= i+1 %>">Option <%= i+1 %>:</label>
+                            <input type="text" name="option<%= i+1 %>" id="option<%= i+1 %>">
+                            <br>
+                        <% } %>
+                    </div>
+                    <div class="py-2">
+                        <button type="button" onclick="addTextBox()" class="bg-yellow-600 hover:bg-yellow-900 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2">Add</button>
+                        <button type="button" onclick="deleteTextBox()" class="bg-red-600 hover:bg-red-900 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2">Remove</button>
+                    </div>
+                    <div class="py-2 centerElement">
+                        <button type="submit" class="bg-green-600 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2">Add Question</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

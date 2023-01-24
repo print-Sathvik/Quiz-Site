@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <link href="/css/styles.css" rel="stylesheet">
+    <title>Online Voting Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        var token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+        function changeStatus(id)
+        {
+            fetch(`/elections/manage/${id}/changeStatus`, {
+                method: "put",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    "_csrf": token
+                })
+            }).then((res) => {
+                if(res.ok) {
+                    window.location.reload();
+                }
+            })
+            .catch((err) => console.error(err));
+        }
+
+        function deleteElection(id)
+        {
+            fetch(`/elections/${id}`, {
+                method: "delete",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    "_csrf": token
+                })
+            })
+            .then((res) => {
+                if(res.ok) {
+                    window.location.reload();
+                }
+            })
+            .catch((err) => console.error(err));
+        }
+    </script>
+
+</head>
+<body>
+    <%- include('header.ejs') %>
+    <div class="grid grid-cols-6">
+        <div class="col-start-2 col-span-4">
+            <h3 class="text-xl centerElement py-1">Welcome <%= firstName %></h3>
+            <% if(messages && messages.error && messages.error.length > 0) { %>
+                <% for(var i=0; i<messages.error.length; i++) { %>
+                        <p class="flash-error"> <%= messages.error[i] %></p>
+                <% } %>
+            <% } %>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <div class="flex justify-center">
+                <div class="flex gap-2 py-4">
+                    <div class="flex-none">
+                        <a href="/quiz/new"><button class="bg-green-600 text-white px-5 py-2 rounded font-medium mr-2 mb-2"> New Quiz </button></a>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-center">
+                <%- include('quizList.ejs', allQuiz) %>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

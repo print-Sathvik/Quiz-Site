@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <link href="/css/styles.css" rel="stylesheet">
+    <title>Quiz Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <%- include('header.ejs') %>
+    <div class="grid grid-cols-6">
+        <div class="col-start-3 col-span-2 text-lg">
+            <% if(messages && messages.error && messages.error.length > 0)  { %>
+                <% for(var i=0; i<messages.error.length; i++) { %>
+                        <p class="flash-error"> <%= messages.error[i] %></p>
+                <% } %>
+            <% } %>
+            <p class="py-2">Welcome to the Quiz Manager</p>
+            <p class="py-2">New here? Do you host quiz?  <a href="/signup" class="text-green-600">Sign-up now</a></p>
+            <p class="py-2">Already have an Admin account?  <a href="/login" class="text-green-600">Admin Sign-in</a></p>
+            <br><br>
+            <p class="py-2">If you are a player, login here  <a href="/playerLogin" class="text-green-600">Player Sign-in</a></p>
+        </div>
+    </div>
+</body>
+</html>

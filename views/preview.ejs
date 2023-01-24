@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <link href="/css/styles.css" rel="stylesheet">
+    <title>Online Voting Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        var token = document.querySelector('meta[name="csrf-token"]')
+        .getAttribute("content");
+        function changeStatus(id)
+        {
+            fetch(`/elections/manage/${id}/changeStatus`, {
+                method: "put",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({
+                    "_csrf": token
+                })
+            }).catch((err) => console.error(err));
+        }
+    </script>
+
+</head>
+<body>
+    <%- include('header.ejs') %>
+    <div class="grid grid-cols-6">
+        <div class="col-start-2 col-span-3">
+            <br>
+            <div>
+                <% for(var i=0; i < questions.length; i++) { %>
+                    <div class="py-2">
+                        <h3 class="ml-2 text-xl text-black-900 font-bold"><%= i+1 %>. <%= questions[i].title%></h3>
+                        <p class="px-8"><%= questions[i].description %></p>
+                        <% for(var j=0; j < options.length; j++) {
+                            if(options[j].length != 0 && options[j][0].questionId == questions[i].id) { %>
+                                <% for(var k=0; k < options[j].length; k++) { %>
+                                    <input type="radio" disabled id="<%= `q${questions[i].id}o${options[j][k].id}` %>" name="<%= `q${questions[i].id}` %>" class="default:border-green-500" style="margin-left: 30px">
+                                    <label for="<%= `q${questions[i].id}o${options[j][k].id}` %>" class="text-xl"><%= options[j][k].option %></label>
+                                    <br>
+                                <% } %>
+                            <% } %>
+                        <% } %>
+                    </div>
+                <% } %>
+            </div>
+            <% if(questions.length == 0) { %>
+                <p class="flash-error">Cannot start an election without any question</p>
+            <% } else { %>
+                <form method="post" action="/questions/manage/<%= electionId %>/launch">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                    <button type="submit" class="bg-green-600 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2">Launch Election</button>
+                </form>
+            <% } %>
+        </div>
+    </div>
+</body>
+</html>

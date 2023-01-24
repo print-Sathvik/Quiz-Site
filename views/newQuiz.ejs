@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content= "<%= csrfToken %>">
+    <link href="/css/styles.css" rel="stylesheet" />
+    <title>COSC Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <%- include('header.ejs') %>
+    <div class="grid grid-cols-6">
+        <div class="col-start-3 col-span-2">
+          <h6 class="py-4">Enter all the details</h6>
+          <form action="/quiz" method="post">
+            <% if(messages && messages.error && messages.error.length > 0)  { %>
+                <% for(var i=0; i<messages.error.length; i++) { %>
+                        <p class="flash-error"> <%= messages.error[i] %></p>
+                <% } %>
+              <% } %>
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="py-3">
+                <label for="title">Title:</label>
+                <input type="text" name="title" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
+            </div>
+            <div class="py-3">
+                <label for="key" style="color: red;">Quiz Key(share it with users when you want them to start):</label>
+                <input type="text" name="key" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
+            </div>  
+            <div class="py-3"> 
+                <label for="timer">Time limit for each question:</label>
+                <input type="text" name="timer" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
+            </div>
+            <div class="py-3"> 
+                <label for="score">Score for each question:</label>
+                <input type="text" name="score" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
+            </div>
+            <div class="py-3"> 
+                <label for="penalty">Penalty for each hint:</label>
+                <input type="text" name="penalty" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
+            </div>
+            <div class="py-3"> 
+                <button type="submit" class="text-white bg-green-600 hover:bg-green-800 font-medium rounded px-5 py-2">Create</button>        
+            </div>  
+            </form>
+        </div>
+    </div>
+</body>
+</html>
