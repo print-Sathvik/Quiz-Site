@@ -6,7 +6,8 @@ const {
   Quiz,
   User,
   Question,
-  Response
+  Response,
+  StartTime
 } = require("./models");
 const bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
@@ -17,6 +18,7 @@ const session = require("express-session");
 const flash = require("connect-flash");
 const LocalStrategy = require("passport-local");
 const bcrypt = require("bcrypt");
+const { Op } = require("sequelize");
 
 const saltRounds = 10;
 
@@ -518,6 +520,13 @@ app.post("/findQuiz", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin
         if(quiz == null) {
             throw "Wrong Key";
         }
+        const started = await StartTime.findOne({where: {userId: request.user.id}});
+        if(started == null) {
+            await StartTime.create({
+                userId: request.user.id,
+                date: new Date()
+            });
+        }
         response.redirect(`/quiz/${quizKey}/all`);
     } catch (error) {
         console.log(error);
@@ -533,12 +542,8 @@ app.get("/quiz/:quizKey/all", connectEnsureLogin.ensureLoggedIn({redirectTo: "/u
     }
     const quizKey = request.params.quizKey;
     const quiz = await Quiz.findOne({ where: {key: quizKey}});
-    const questions = await Question.findAll( {where: {quizId: quiz.id}});
-    response.render("questionList", { 
-        questions,
-        quizKey,
-        csrfToken: request.csrfToken()
-    });
+    const question = await Question.findOne( {where: {quizId: quiz.id}});
+    response.redirect(`/quiz/${quizKey}/question/${question.id}`);
 })
 
 app.get("/quiz/:quizKey/question/:id", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
@@ -546,17 +551,23 @@ app.get("/quiz/:quizKey/question/:id", connectEnsureLogin.ensureLoggedIn({redire
         request.flash("error", "Admin cannot access player page");
         return response.redirect(request.headers.referer);
     }
+    const quizKey = request.params.quizKey;
+    const quiz = await Quiz.findOne({ where: {key: quizKey}});
     const question = await Question.findByPk(request.params.id);
-    const quiz = await Quiz.findOne({ where: {key: request.params.quizKey}});
+    const questions = await Question.findAll( {where: {quizId: quiz.id}});
     const userResponse = await Response.findOne({ where: {userId:request.user.id, questionId: request.params.id}});
+    const startTime = await StartTime.findOne({where: {userId: request.user.id}});
     let noOfHints = 0;
     if(userResponse != null) {
         noOfHints = userResponse.hintsUsed
     }
     response.render("question", { 
         question,
+        quiz,
+        questions,
         quizKey: quiz.key,
         noOfHints,
+        startTime: startTime.date.toLocaleString(),
         csrfToken: request.csrfToken()
     });
 })
@@ -638,6 +649,53 @@ app.get("/quiz/:questionId/hint", connectEnsureLogin.ensureLoggedIn({redirectTo:
         response.status(200);
         response.send(error);
     }
+})
+
+app.get("/quiz/:id/leaderboard", connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
+    if (request.user.userType == "voter") {
+        request.flash("error", "User cannot access that page");
+        return response.redirect(request.headers.referer);
+    }
+    const quizId = request.params.id;
+    const users = await User.findAll({
+        where: {quizId},
+        attributes: ['id', 'userId']
+    });
+    //const questions = await Question.findAll({ where:{quizId}, attributes: ['id'] });
+    let userpkIds = new Array(users.length);
+    for (let i = 0; i < users.length; i++) {
+        userpkIds[i] = users[i].id;
+        users[i].score = 0;
+    }
+    console.log("===================", userpkIds);
+    const responses = await Response.findAll({
+        where: {
+            status: true,
+            userId: {
+                [Op.or]: userpkIds
+            }
+        }
+    });
+
+    const quiz = await Quiz.findByPk(quizId);
+    const maxScore = quiz.score;
+    const penalty = quiz.penalty;
+    for (let i = 0; i < users.length; i++) {
+        for (let j = 0; j < responses.length; j++) {
+            if(responses[j].userId == users[i].id) {
+                users[i].score = users[i].score + maxScore - penalty * responses[j].hintsUsed
+            }
+        }
+    }
+    users.sort(function(a, b){
+        return b.score - a.score;
+    });
+    
+    console.log(users);
+    response.render("leaderboard", {
+        users,
+        csrfToken: request.csrfToken()
+    });
 })
 
 module.exports = app;

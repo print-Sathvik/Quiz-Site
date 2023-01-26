@@ -24,12 +24,56 @@
             .catch((err) => console.error(err));
         }
     </script>
+    <script>
+        // Set the date we're counting down to
+        var countDownDate = new Date(new Date("<%= startTime %>").getTime() + <%= quiz.timer %>*1000);
+        
+        // Update the count down every 1 second
+        var x = setInterval(function() {
+        
+          // Get today's date and time
+          var now = new Date().getTime();
+        
+          // Find the distance between now and the count down date
+          var distance = countDownDate - now;
+        
+          // Time calculations for days, hours, minutes and seconds
+          var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+          var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+          var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+          var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        
+          // Display the result in the element with id="timer"
+          document.getElementById("timer").innerHTML = days + "d " + hours + "h "
+          + minutes + "m " + seconds + "s ";
+        
+          // If the count down is finished, write some text
+          if (distance < 0) {
+            clearInterval(x);
+            document.getElementById("timer").innerHTML = "EXPIRED";
+            window.location.href = "/quiz";
+          }
+        }, 1000);
+    </script>
+        
 </head>
 <body>
     <%- include('userheader.ejs') %>
     <div class="grid grid-cols-6">
+        <div class="col-start-1 col-span-1" style="flex-grow: 1;overflow-y:scroll;">
+            <div>
+                <ul class="list-none">
+                    <% for(var i=0; i < questions.length; i++) { %>
+                        <li  class="voter">
+                            <a href="/quiz/<%= quizKey %>/question/<%= questions[i].id %>">Question <%= i+1 %></a>
+                        </li>
+                    <% } %>
+                </ul>
+            </div>
+        </div>
         <div class="col-start-2 col-span-3">
             <a href="/quiz/<%= quizKey %>/all"> <== All Questions</a>
+            <p id="timer" class="text-lg"></p>
             <form method="post" action="/submitAnswer">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <input type="hidden" name="questionId" value="<%= question.id %>">
