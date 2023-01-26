@@ -6,15 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content= "<%= csrfToken %>">
     <link href="/css/styles.css" rel="stylesheet" />
-    <title><%= title %></title>
+    <title>COSC Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
-    <%- include('header.ejs') %>
+    <%- include('userheader.ejs') %>
     <div class="grid grid-cols-6">
         <div class="col-start-3 col-span-2">
           <h6 class="py-4 text-lg">Enter the key to start the quiz</h6>
-          <form action="/quizFind" method="post">
+          <form action="/findQuiz" method="post">
             <% if(messages && messages.error && messages.error.length > 0)  { %>
                 <% for(var i=0; i<messages.error.length; i++) { %>
                         <p class="flash-error"> <%= messages.error[i] %></p>
@@ -25,8 +25,8 @@
                 <label for="quizKey">Key:</label>
                 <input type="text" name="quizKey" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
             </div>
-            <div class="py-3"> 
-                <button type="submit" class="text-white bg-green-600 hover:bg-green-800 font-medium rounded px-5 py-2">Sign up</button>        
+            <div class="py-3 centerElement"> 
+                <button type="submit" class="text-white bg-green-600 hover:bg-green-800 font-medium rounded px-5 py-2">Start</button>        
             </div>  
             </form>
         </div>

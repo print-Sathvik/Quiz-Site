@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <link href="/css/styles.css" rel="stylesheet">
+    <title>COSC Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        var token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+        function fetchHint(questionId)
+        {
+            fetch(`/quiz/${questionId}/hint`, {
+                method: "get",
+                headers: {"Content-Type": "text/html"}
+            })
+            .then((res) => {
+                if(res.ok) {
+                    window.location.reload();
+                }
+            })
+            .catch((err) => console.error(err));
+        }
+    </script>
+</head>
+<body>
+    <%- include('userheader.ejs') %>
+    <div class="grid grid-cols-6">
+        <div class="col-start-2 col-span-3">
+            <a href="/quiz/<%= quizKey %>/all"> <== All Questions</a>
+            <form method="post" action="/submitAnswer">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <input type="hidden" name="questionId" value="<%= question.id %>">
+                <% if(messages && messages.error && messages.error.length > 0)  { %>
+                    <% for(var i=0; i<messages.error.length; i++) { %>
+                        <p class="flash-error"> <%= messages.error[i] %></p>
+                    <% } %>
+                  <% } %>
+                <% if(messages && messages.success && messages.success.length > 0)  { %>
+                    <% for(var i=0; i<messages.success.length; i++) { %>
+                            <p class="flash-success"> <%= messages.success[i] %></p>
+                    <% } %>
+                <% } %>
+                <% let hints = question.hints.split("|~|"); %>
+                <div class="py-2">
+                    <h3 class="text-xl text-black-900 font-bold"><%= question.title%></h3>
+                    <% for(var i=0; i < noOfHints; i++) { %>
+                        <p>Hint <%= i+1 %>: <%= hints[i] %></p>
+                    <% } %>
+                    <label for="answer">Answer:</label>
+                    <input type="text" name="answer" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
+                </div>
+                <div class="py-3 centerElement"> 
+                    <button type="button" onclick="fetchHint(<%= question.id %>)" value="Hint" class="tex>t-white bg-yellow-600 hover:bg-yellow-800 font-medium rounded px-5 py-2">Hint</button>
+                </div>
+                <div class="py-3 centerElement"> 
+                    <button type="submit" class="text-white bg-green-600 hover:bg-green-800 font-medium rounded px-5 py-2">Submit</button>        
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

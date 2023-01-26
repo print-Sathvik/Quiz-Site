@@ -6,14 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<%= csrfToken %>" />
     <link href="/css/styles.css" rel="stylesheet">
-    <title>Online Voting Manager</title>
+    <title>COSC Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         var token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
         function changeStatus(id)
         {
             fetch(`/elections/manage/${id}/changeStatus`, {
-                method: "put",
+                method: "get",
                 headers: {"Content-Type": "application/json"},
                 body: JSON.stringify({
                     "_csrf": token

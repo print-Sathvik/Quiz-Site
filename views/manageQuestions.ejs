@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<%= csrfToken %>" />
     <link href="/css/styles.css" rel="stylesheet">
-    <title>Online Voting Manager</title>
+    <title>COSC Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         var token = document.querySelector('meta[name="csrf-token"]')
@@ -33,7 +33,7 @@
 <body>
     <%- include('header.ejs') %>
     <div class="centerElement">
-        <a href="/elections/manage/<%= electionId %>/newQuestion"><button type="button" class="bg-green-600 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2">New Question</button></a>
+        <a href="/quiz/manage/<%= quizId %>/newQuestion"><button type="button" class="bg-green-600 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2">New Question</button></a>
     </div>
     <div class="grid grid-cols-6">
         <div class="col-start-2 col-span-3">
@@ -48,7 +48,8 @@
                 <% } %>
             <% } %>
             <div>
-                <% for(var i=0; i < questions.length; i++) { %>
+                <% let hints = new Array();
+                for(var i=0; i < questions.length; i++) { %>
                     <div class="py-2">
                         <h3 class="ml-2 text-xl text-black-900 font-bold"><%= i+1 %>. <%= questions[i].title%>
                             <a href="/questions/manage/<%= questions[i].id %>/editQuestion" class="px-3 ml-2 cursor-pointer">
@@ -63,15 +64,10 @@
                                 </svg>
                             </a>
                         </h3>
-                        <p class="px-8"><%= questions[i].description %></p>
-                        <% for(var j=0; j < options.length; j++) {
-                            if(options[j].length != 0 && options[j][0].questionId == questions[i].id) { %>
-                                <% for(var k=0; k < options[j].length; k++) { %>
-                                    <input type="radio" disabled id="<%= `q${questions[i].id}o${options[j][k].id}` %>" name="<%= `q${questions[i].id}` %>" class="default:border-green-500" style="margin-left: 30px">
-                                    <label for="<%= `q${questions[i].id}o${options[j][k].id}` %>" class="text-xl"><%= options[j][k].option %></label>
-                                    <br>
-                                <% } %>
-                            <% } %>
+                        <p class="px-8">Answer: <%= questions[i].answer %></p>
+                        <% hints = questions[i].hints.split("|~|");
+                        for(var j=0; j < hints.length-1; j++) { %>
+                            <p style="margin-left: 30px">Hint <%= j+1 %>: <%= hints[j] %></p>
                         <% } %>
                     </div>
                 <% } %>

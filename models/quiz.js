@@ -12,6 +12,18 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       // define association here
     }
+
+    async changeStatus(id, status) {
+      status = 1 - status;
+      return await Quiz.update(
+        { status },
+        {
+          where: {
+            id,
+          },
+        }
+      );
+    }
   }
   Quiz.init({
     title: DataTypes.STRING,

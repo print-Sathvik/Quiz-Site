@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<%= csrfToken %>" />
     <link href="/css/styles.css" rel="stylesheet">
-    <title>GOSC Quiz</title>
+    <title>COSC Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
@@ -20,7 +20,7 @@
                 <% } %>
               <% } %>
             <h3 class="text-lg py-2 text-red-600">Share this Key with the participants: <%= key %></h3>
-            <p>Time Limit for each question: <%= timer %></p>
+            <p>Time Limit for each question: <%= timer %> seconds</p>
             <p>Score of each question: <%= score %></p>
             <p>Penalty for each hint: <%=penalty%></p>
             <div>

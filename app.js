@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 const express = require("express");
 var csrf = require("tiny-csrf");
 const app = express();
@@ -7,7 +6,7 @@ const {
   Quiz,
   User,
   Question,
-  Response,
+  Response
 } = require("./models");
 const bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
@@ -81,8 +80,9 @@ passport.use(
     (username, password, done) => {
       User.findOne({ where: { userId: username } })
         .then(async function (user) {
-          const result = await bcrypt.compare(password, user.password);
-          if (result) {
+          //const result = await bcrypt.compare(password, user.password);
+          console.log(password, user, user.password);
+          if (password == user.password) {
             return done(null, user);
           } else {
             return done(null, false, { message: "Invalid password" });
@@ -200,7 +200,7 @@ app.post(
 );
 
 app.get(
-  "/playerLogin",
+  "/userLogin",
   connectEnsureLogin.ensureLoggedOut(),
   (request, response) => {
     response.render("login", {
@@ -214,22 +214,13 @@ app.get(
 app.post(
   "/userSession",
   passport.authenticate("UserAuthenticate", {
-    failureRedirect: "/playerLogin",
+    failureRedirect: "/userLogin",
     failureFlash: true,
   }),
   function (request, response) {
-    console.log("+++++++++++++++++++++++", global.globalElectionId);
     response.redirect("/quiz");
   }
 );
-
-app.get("/quiz", connectEnsureLogin.ensureLoggedIn(), async(request, response) => {
-  response.render("playerHome")
-})
-
-app.post("/quizFind", connectEnsureLogin.ensureLoggedIn(), async(request, response) => {
-  response.redirect(`/quiz/${request.body.quizKey}`);
-})
 
 app.get(
   "/adminHome",
@@ -276,23 +267,27 @@ app.post(
       return response.redirect("/adminHome");
     }
     try {
-      const election = await Quiz.create({
-        title: request.body.title,
-        adminId: request.user.id,
-        key: request.body.key,
-        timer: request.body.timer,
-        score: request.body.score,
-        penalty: request.body.penalty,
-        status: 0
+        let quiz = await Quiz.findOne({ where: {key: request.body.key}});
+        if(quiz != null) {
+            throw "This key is currently in use by other quiz. Try some other key"
+        }
+        quiz = await Quiz.create({
+            title: request.body.title,
+            adminId: request.user.id,
+            key: request.body.key,
+            timer: request.body.timer,
+            score: request.body.score,
+            penalty: request.body.penalty,
+            status: 0
       });
       if (request.accepts("html")) {
         return response.redirect("/adminHome");
       } else {
-        return response.json(election);
+        return response.json(quiz);
       }
     } catch (error) {
       console.log(error);
-      return response.status(422).json(error);
+      return response.redirect("/quiz/new");
     }
   }
 );
@@ -306,201 +301,106 @@ app.get("/signout", (request, response, next) => {
   });
 });
 
+//To change quiz from Not started -> Started -> Restart
 app.get(
-  "/election/:id/status/:chartType(bar|pie|doughnut)",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (request, response) => {
-    const electionId = request.params.id;
-    const election = await Election.findByPk(electionId);
-    const questions = await Question.getQuestions(electionId);
-    const totalVoters = await ElectionVoter.count({ where: { electionId } });
-    const voted = await Response.votedCount(questions[0].id);
-    let options = new Array(questions.length);
-    let optionsCount = new Array(questions.length);
-    for (let i = 0; i < questions.length; i++) {
-      options[i] = await Option.getOptions(questions[i].id);
-      optionsCount[i] = await Response.getOptionsCount(
-        questions[i].id,
-        options[i]
-      );
+    "/quiz/manage/:id/changeStatus",
+    connectEnsureLogin.ensureLoggedIn(),
+    async function (request, response) {
+      if (request.user.userType == "voter") {
+        request.flash("error", "User cannot access that page");
+        return response.redirect(request.headers.referer);
+      }
+      const quiz = await Quiz.findByPk(request.params.id);
+      try {
+        await quiz.changeStatus(
+          quiz.id,
+          quiz.status
+        );
+        return response.redirect("/adminHome");
+      } catch (error) {
+        console.log(error);
+        return response.status(422).json(error);
+      }
     }
-    response.render("progress", {
-      questions,
-      options,
-      optionsCount,
-      totalVoters,
-      voted,
-      electionId,
-      chartType: request.params.chartType || "bar",
-      message: `Progress of ${election.title}`,
-      csrfToken: request.csrfToken(),
-    });
-  }
-);
-
-app.delete(
-  "/elections/:id",
-  connectEnsureLogin.ensureLoggedIn(),
-  async function (request, response) {
-    if (request.user.userType == "voter") {
-      request.flash("error", "User cannot access that page");
-      return response.redirect(request.headers.referer);
-    }
-    try {
-      console.log(request.body);
-      await Election.remove(request.params.id, request.user.id); //Added user id to check who is deleting
-      return response.json({ success: true });
-    } catch (error) {
-      return response.status(422).json(error);
-    }
-  }
-);
-
-//To change election from Not started -> Started -> Ended
-app.put(
-  "/elections/manage/:id/changeStatus",
-  connectEnsureLogin.ensureLoggedIn(),
-  async function (request, response) {
-    if (request.user.userType == "voter") {
-      request.flash("error", "User cannot access that page");
-      return response.redirect(request.headers.referer);
-    }
-    const election = await Election.findByPk(request.params.id);
-    try {
-      const updatedElection = await election.changeStatus(
-        election.id,
-        election.started,
-        election.ended
-      );
-      return response.json(updatedElection);
-    } catch (error) {
-      console.log(error);
-      return response.status(422).json(error);
-    }
-  }
-);
-
-//Manage a specific quiz after clicking on 'Manage' in the home page
-app.get(
-  "/quiz/manage/:id",
-  connectEnsureLogin.ensureLoggedIn(),
-  async function (request, response) {
-    if (request.user.userType == "voter") {
-      request.flash("error", "User cannot access that page");
-      return response.redirect(request.headers.referer);
-    }
-    const quiz = await Quiz.findByPk(request.params.id);
-    response.render("manageQuiz", {
-      quizTitle: quiz.title,
-      quizId: request.params.id,
-      key: quiz.key,
-      timer: quiz.timer,
-      score: quiz.score,
-      penalty: quiz.penalty,
-      csrfToken: request.csrfToken(),
-    });
-  }
 );
 
 app.get(
-  "/elections/manage/:id/preview",
-  connectEnsureLogin.ensureLoggedIn(),
-  async function (request, response) {
-    if (request.user.userType == "voter") {
-      request.flash("error", "User cannot access that page");
-      return response.redirect(request.headers.referer);
-    }
-    const electionId = request.params.id;
-    const questions = await Question.getQuestions(electionId);
-    let options = new Array(questions.length);
-    for (let i = 0; i < questions.length; i++) {
-      options[i] = await Option.getOptions(questions[i].id);
-    }
-    response.render("preview", {
-      electionId,
-      questions,
-      options,
-      csrfToken: request.csrfToken(),
-    });
-  }
-);
-
-app.get(
-  "/elections/manage/:id/manageVoters",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (request, response) => {
-    if (request.user.userType == "voter") {
-      request.flash("error", "User cannot access that page");
-      return response.redirect(request.headers.referer);
-    }
-    const electionId = request.params.id;
-    const voterTableIds = await ElectionVoter.getVoters(electionId);
-    const allVoters = await Voter.getVoters(voterTableIds);
-    response.render("manageVoters", {
-      electionId: electionId,
-      allVoters,
-      csrfToken: request.csrfToken(),
-    });
-  }
-);
-
-//Add Voters for a particular election
-app.post(
-  "/addVoter",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (request, response) => {
-    if (request.user.userType == "voter") {
-      request.flash("error", "User cannot access that page");
-      return response.redirect(request.headers.referer);
-    }
-    const hashedPassword = await bcrypt.hash(request.body.password, saltRounds);
-    try {
-      const user = await Voter.create({
-        voterId: request.body.voterId,
-        password: hashedPassword,
+    "/quiz/manage/:id",
+    connectEnsureLogin.ensureLoggedIn(),
+    async function (request, response) {
+      if (request.user.userType == "voter") {
+        request.flash("error", "User cannot access that page");
+        return response.redirect(request.headers.referer);
+      }
+      const quiz = await Quiz.findByPk(request.params.id);
+      response.render("manageQuiz", {
+        quizTitle: quiz.title,
+        quizId: request.params.id,
+        key: quiz.key,
+        timer: quiz.timer,
+        score: quiz.score,
+        penalty: quiz.penalty,
+        csrfToken: request.csrfToken(),
       });
-      await ElectionVoter.create({
-        electionId: request.body.electionId,
-        voterId: user.id,
+    }
+  );
+
+app.get(
+  "/quiz/manage/:id/managePlayers",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (request, response) => {
+    if (request.user.userType == "voter") {
+      request.flash("error", "User cannot access that page");
+      return response.redirect(request.headers.referer);
+    }
+    const quizId = request.params.id;
+    const allUsers = await User.findAll({ where: {quizId: quizId } });
+    response.render("manageUsers", {
+      quizId,
+      allUsers,
+      csrfToken: request.csrfToken(),
+    });
+  }
+);
+
+app.post(
+  "/addUser",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (request, response) => {
+    if (request.user.userType == "voter") {
+      request.flash("error", "User cannot access that page");
+      return response.redirect(request.headers.referer);
+    }
+    //const hashedPassword = await bcrypt.hash(request.body.password, saltRounds);
+    try {
+      const user = await User.create({
+        userId: request.body.userId,
+        quizId: request.body.quizId,
+        password: request.body.password,
       });
       if (request.accepts("html")) {
-        return response.redirect(
-          `/elections/manage/${request.body.electionId}/manageVoters`
-        );
+        return response.redirect(`/quiz/manage/${request.body.quizId}/managePlayers`);
       } else {
         return response.json(user);
       }
     } catch (error) {
       console.log(error);
-      request.flash(
-        "error",
-        "This voter ID already exists, please give a diferent ID"
-      );
-      response.redirect(
-        `/elections/manage/${request.body.electionId}/manageVoters`
-      );
+      request.flash("error", "This user ID already exists, please give a diferent ID");
+      response.redirect(`/quiz/manage/${request.body.quizId}/managePlayers`);
     }
   }
 );
 
 app.get(
-  "/elections/manage/:id/newQuestion",
+  "/quiz/manage/:id/newQuestion",
   connectEnsureLogin.ensureLoggedIn(),
   async (request, response) => {
     if (request.user.userType == "voter") {
       request.flash("error", "User cannot access that page");
       return response.redirect(request.headers.referer);
     }
-    const electionId = request.params.id;
-    const questions = await Question.getQuestions(electionId);
-    let options = new Array(questions.length);
-    for (let i = 0; i < questions.length; i++) {
-      options[i] = await Option.getOptions(questions[i].id);
-    }
     response.render("addQuestion", {
-      electionId,
-      questions,
-      options,
+      quizId: request.params.id,
       csrfToken: request.csrfToken(),
     });
   }
@@ -514,21 +414,7 @@ app.post(
       request.flash("error", "User cannot access that page");
       return response.redirect(request.headers.referer);
     }
-    const option1 = request.body.option1;
-    const option2 = request.body.option2;
-    if (option1.trim().length === 0 || option2.trim().length === 0) {
-      request.flash("error", "Options cannot be empty");
-      return response.redirect(
-        `/elections/manage/${request.body.electionId}/newQuestion`
-      );
-    }
     try {
-      const newQuestion = await Question.create({
-        title: request.body.title,
-        description: request.body.description,
-        electionId: request.body.electionId,
-      });
-
       let i = 1;
       let opt = eval(`request.body.option${i}`);
       while (opt != undefined) {
@@ -536,364 +422,222 @@ app.post(
         if (opt == undefined) {
           break;
         } else if (opt.trim().length == 0) {
-          throw "Options cannot be empty and there should be atleast 2 options";
+          throw "Hints cannot be empty";
         }
         i++;
       }
-
+      let appendedHints = "";
       for (let i = 1; ; i++) {
         opt = eval(`request.body.option${i}`);
         if (opt == undefined) {
           break;
         } else {
-          await Option.create({
-            option: opt,
-            questionId: newQuestion.id,
-          });
+          appendedHints = appendedHints + opt + "|~|" ;
         }
       }
+      await Question.create({
+        quizId: request.body.quizId,
+        title: request.body.title,
+        answer: request.body.answer,
+        hints: appendedHints
+      });
       request.flash("success", "Question added Successfully");
       return response.redirect(
-        `/elections/manage/${request.body.electionId}/manageQuestions`
+        `/quiz/manage/${request.body.quizId}/manageQuestions`
       );
     } catch (error) {
       console.log(error);
       request.flash("error", error);
       response.redirect(
-        `/elections/manage/${request.body.electionId}/newQuestion`
+        `/quiz/manage/${request.body.quizId}/newQuestion`
       );
     }
   }
 );
 
-app.get(
-  "/elections/manage/:id/manageQuestions",
+app.get("/quiz/manage/:id/manageQuestions",
   connectEnsureLogin.ensureLoggedIn(),
   async (request, response) => {
     if (request.user.userType == "voter") {
       request.flash("error", "User cannot access that page");
       return response.redirect(request.headers.referer);
     }
-    const electionId = request.params.id;
-    const election = await Election.findByPk(request.params.id);
+    const quizId = request.params.id;
+    const quiz = await Quiz.findByPk(quizId);
     try {
-      if (election.started == true) {
-        throw "Election has started. You cannot modify the questions now";
+      if (quiz.status == 1) {
+        throw "Quiz has started. You cannot modify the questions while the quiz is going on";
       }
-      const questions = await Question.getQuestions(electionId);
-      let options = new Array(questions.length);
-      for (let i = 0; i < questions.length; i++) {
-        options[i] = await Option.getOptions(questions[i].id);
-      }
+      const questions = await Question.findAll({ where: {quizId}});
       response.render("manageQuestions", {
-        electionId,
+        quizId,
         questions,
-        options,
         csrfToken: request.csrfToken(),
       });
     } catch (error) {
       console.log(error);
       request.flash("error", error);
-      response.redirect(`/elections/manage/${electionId}`);
+      response.redirect(`/quiz/manage/${quizId}`);
     }
   }
 );
 
-app.get(
-  "/questions/manage/:questionid/editQuestion",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (request, response) => {
+app.delete("/questions/manage/:questionId", connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
     if (request.user.userType == "voter") {
       request.flash("error", "User cannot access that page");
       return response.redirect(request.headers.referer);
     }
-    const questionId = request.params.questionid;
-    const question = await Question.findByPk(questionId);
-    const options = await Option.getOptions(questionId);
-    response.render("editQuestion", {
-      question,
-      options,
-      csrfToken: request.csrfToken(),
-    });
-  }
-);
-
-app.post(
-  "/updateQuestion",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (request, response) => {
-    if (request.user.userType == "voter") {
-      request.flash("error", "User cannot access that page");
-      return response.redirect(request.headers.referer);
-    }
-    try {
-      await Question.update(
-        {
-          title: request.body.title,
-          description: request.body.description,
-        },
-        {
-          where: {
-            id: request.body.questionId,
-          },
-        }
-      );
-
-      //Validating
-      let i = 1;
-      let opt = eval(`request.body.option${i}`);
-      while (opt != undefined) {
-        opt = eval(`request.body.option${i}`);
-        if (opt == undefined) {
-          break;
-        } else if (opt.trim().length == 0) {
-          throw "Options cannot be empty";
-        }
-        i++;
-      }
-
-      await Option.remove(request.body.questionId);
-      for (let i = 1; ; i++) {
-        opt = eval(`request.body.option${i}`);
-        if (opt == undefined) {
-          break;
-        } else {
-          await Option.create({
-            option: opt,
-            questionId: request.body.questionId,
-          });
-        }
-      }
-      request.flash("success", "Question Updated Successfully");
-      return response.redirect(
-        `/elections/manage/${request.body.electionId}/manageQuestions`
-      );
-    } catch (error) {
-      console.log(error);
-      request.flash("error", error);
-      return response.redirect(
-        `/questions/manage/${request.body.questionId}/editQuestion`
-      );
-    }
-  }
-);
-
-app.post(
-  "/questions/manage/:id/launch",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (request, response) => {
-    if (request.user.userType == "voter") {
-      request.flash("error", "User cannot access that page");
-      return response.redirect(request.headers.referer);
-    }
-    const election = await Election.findByPk(request.params.id);
-    try {
-      const updatedElection = await election.changeStatus(
-        election.id,
-        election.started,
-        election.ended
-      );
-      return response.redirect("/adminHome");
-    } catch (error) {
-      console.log(error);
-      return response.status(422).json(error);
-    }
-  }
-);
-
-app.delete(
-  "/questions/manage/:questionId",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (request, response) => {
-    if (request.user.userType == "voter") {
-      request.flash("error", "User cannot access that page");
-      return response.redirect(request.headers.referer);
-    }
-    await Option.remove(request.params.questionId);
-    //Deleting the options for the deleted question
-
     await Question.destroy({
       where: {
         id: request.params.questionId,
       },
     });
-
     return response.json({ success: true });
   }
 );
 
-app.post(
-  "/addCustomURL",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (request, response) => {
-    const electionId = request.body.electionId;
-    const url = request.body.customURL;
+
+app.get("/quiz", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
+    if (request.user.userType == "admin") {
+        request.flash("error", "Admin cannot access player page");
+        return response.redirect(request.headers.referer);
+    }
+    response.render("playerHome", {
+        csrfToken: request.csrfToken()
+    })
+})
+
+app.post("/findQuiz", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
+    if (request.user.userType == "admin") {
+        request.flash("error", "Admin cannot access player page");
+        return response.redirect(request.headers.referer);
+    }
+    const quizKey = request.body.quizKey;
+    const quiz = await Quiz.findOne({ where: {key: quizKey}});
     try {
-      const isnum = /^\d+$/.test(url);
-      if (isnum) {
-        throw "Custom URL connot be entirely of numbers. Add other characters also";
-      }
-      if (url.indexOf(" ") >= 0) {
-        throw "White spaces should not be there";
-      }
-      const newurl = await Url.create({
-        electionId: electionId,
-        customURL: url,
-      });
-      response.redirect(`/elections/manage/${electionId}`);
+        if(quiz == null) {
+            throw "Wrong Key";
+        }
+        response.redirect(`/quiz/${quizKey}/all`);
     } catch (error) {
-      console.log(error);
-      request.flash("error", error);
-      response.redirect(`/elections/manage/${electionId}`);
+        console.log(error);
+        request.flash("error", error);
+        response.redirect(`/quiz`);
     }
-  }
-);
-
-app.get("/vote/election/:id", async (request, response) => {
-  const isnum = /^\d+$/.test(request.params.id);
-  try {
-    let election, electionId;
-    if (isnum) {
-      election = await Election.findByPk(request.params.id);
-      electionId = request.params.id;
-      if (election == null) {
-        throw "No election with such URL";
-      }
-    } else {
-      const customURL = request.params.id;
-      const url = await Url.findOne({ where: { customURL: customURL } });
-      if (url == null) {
-        throw "No election with such URL";
-      }
-      electionId = url.electionId;
-      election = await Election.findByPk(electionId);
-    }
-    global.globalElectionId = electionId;
-
-    if (election.started == true && election.ended == true) {
-      response.redirect(`/vote/${electionId}/bar`);
-    } else {
-      response.redirect(`/vote/${electionId}`);
-    }
-  } catch (error) {
-    console.log(error);
-    request.flash("error", error);
-    response.redirect("/");
-  }
 });
 
-app.get("/vote/:id/:chartType(bar|pie|doughnut)", async (request, response) => {
-  const isnum = /^\d+$/.test(request.params.id);
-  try {
-    let election, electionId;
-    if (isnum) {
-      election = await Election.findByPk(request.params.id);
-      electionId = request.params.id;
-      if (election == null) {
-        throw "No election with such URL";
-      }
-    } else {
-      const customURL = request.params.id;
-      const url = await Url.findOne({ where: { customURL: customURL } });
-      if (url == null) {
-        throw "No election with such URL";
-      }
-      electionId = url.electionId;
-      election = await Election.findByPk(electionId);
+app.get("/quiz/:quizKey/all", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
+    if (request.user.userType == "admin") {
+        request.flash("error", "Admin cannot access player page");
+        return response.redirect(request.headers.referer);
     }
-
-    if (election.started == true && election.ended == true) {
-      const election = await Election.findByPk(electionId);
-      const questions = await Question.getQuestions(electionId);
-      let options = new Array(questions.length);
-      let optionsCount = new Array(questions.length);
-      for (let i = 0; i < questions.length; i++) {
-        options[i] = await Option.getOptions(questions[i].id);
-        optionsCount[i] = await Response.getOptionsCount(
-          questions[i].id,
-          options[i]
-        );
-      }
-      response.render("result", {
+    const quizKey = request.params.quizKey;
+    const quiz = await Quiz.findOne({ where: {key: quizKey}});
+    const questions = await Question.findAll( {where: {quizId: quiz.id}});
+    response.render("questionList", { 
         questions,
-        options,
-        optionsCount,
-        electionId,
-        chartType: request.params.chartType,
-        message: `Results of ${election.title}`,
-        csrfToken: request.csrfToken(),
-      });
-    } else {
-      throw "Election is not yet over";
+        quizKey,
+        csrfToken: request.csrfToken()
+    });
+})
+
+app.get("/quiz/:quizKey/question/:id", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
+    if (request.user.userType == "admin") {
+        request.flash("error", "Admin cannot access player page");
+        return response.redirect(request.headers.referer);
     }
-  } catch (error) {
-    console.log(error);
-    request.flash("error", error);
-    response.redirect("/");
-  }
+    const question = await Question.findByPk(request.params.id);
+    const quiz = await Quiz.findOne({ where: {key: request.params.quizKey}});
+    const userResponse = await Response.findOne({ where: {userId:request.user.id, questionId: request.params.id}});
+    let noOfHints = 0;
+    if(userResponse != null) {
+        noOfHints = userResponse.hintsUsed
+    }
+    response.render("question", { 
+        question,
+        quizKey: quiz.key,
+        noOfHints,
+        csrfToken: request.csrfToken()
+    });
+})
+
+app.post("/submitAnswer", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
+    if (request.user.userType == "admin") {
+        request.flash("error", "Admin cannot access player page");
+        return response.redirect(request.headers.referer);
+    }
+    const question = await Question.findByPk(request.body.questionId);
+    const quiz = await Quiz.findByPk(question.quizId);
+    const answer = request.body.answer
+    try {
+        if(answer.localeCompare(question.answer, undefined, { sensitivity: 'base' }) != 0) {
+            throw "Wrong Answer";
+        }
+        else {
+            const userResponse = await Response.findOne({where: {userId: request.user.id, questionId: request.body.questionId}});
+            if(userResponse == null) {
+                await Response.create({
+                    userId:request.user.id,
+                    questionId: request.body.questionId,
+                    hintsUsed: 0,
+                    status: true
+                });
+            }
+            else if(userResponse.status == false) {
+                await Response.update({status:true}, {
+                    where: {
+                        userId:request.user.id,
+                        questionId: request.body.questionId
+                    }
+                });
+            }
+            request.flash("success", "Correct answer");
+            response.redirect(`/quiz/${quiz.key}/question/${question.id}`);
+        }
+    } catch(error) {
+        console.log(error);
+        request.flash("error", error);
+        response.redirect(`/quiz/${quiz.key}/question/${question.id}`);
+    }
 });
 
-app.get(
-  "/vote/:id",
-  connectEnsureLogin.ensureLoggedIn({
-    redirectTo: "/playerLogin",
-    setReturnTo: true,
-  }),
-  async (request, response, next) => {
+app.get("/quiz/:questionId/hint", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
     if (request.user.userType == "admin") {
-      request.flash("error", "Admin cannot access voter page");
-      return response.redirect("/adminHome");
+        request.flash("error", "Admin cannot access player page");
+        return response.redirect(request.headers.referer);
     }
-    const electionId = request.params.id;
-    const election = await Election.findByPk(electionId);
-    const questions = await Question.getQuestions(electionId);
-    let options = new Array(questions.length);
-    for (let i = 0; i < questions.length; i++) {
-      options[i] = await Option.getOptions(questions[i].id);
+    const questionId = request.params.questionId;
+    const question = await Question.findByPk(questionId);
+    const quiz = await Quiz.findByPk(question.quizId);
+    const userResponse = await Response.findOne({ where: {userId:request.user.id, questionId: questionId}});
+    try {
+        if(userResponse == null) {
+            await Response.create({
+                userId:request.user.id,
+                questionId,
+                hintsUsed: 1,
+                status: false
+            });
+        }
+        else if(userResponse.status == true) {
+            throw "You have already answered this question correctly. So further hints cannot be given"
+        }
+        else {
+            const hints = userResponse.hintsUsed;
+            const combinedHints = question.hints;
+            const maxHints = (combinedHints.match(/\|~\|/g) || []).length;
+            if(userResponse.hintsUsed >= maxHints) {
+                throw "No more hints are available";
+            }
+            await Response.update({hintsUsed: hints+1}, {where: {userId:request.user.id, questionId: questionId}});
+        }
+        return response.redirect(`/quiz/${quiz.key}/question/${questionId}`);
+    } catch(error) {
+        console.log(error);
+        request.flash("error", error);
+        response.status(200);
+        response.send(error);
     }
-    if (election.started == true && election.ended == false) {
-      if (await Response.isResponded(questions[0].id, request.user.id)) {
-        response.render("result", {
-          message: "You have already voted. Please wait for the result",
-          csrfToken: request.csrfToken(),
-        });
-      } else {
-        response.render("castVote", {
-          electionId,
-          questions,
-          options,
-          message: "The questions will appear here",
-          csrfToken: request.csrfToken(),
-        });
-      }
-    } else if (election.started == false) {
-      response.render("result", {
-        message: "Election has not yet started",
-        csrfToken: request.csrfToken(),
-      });
-    }
-  }
-);
-
-app.post(
-  "/addVote",
-  connectEnsureLogin.ensureLoggedIn(),
-  async (request, response) => {
-    if (request.user.userType == "admin") {
-      request.flash("error", "Admin cannot access voter page");
-      return response.redirect("/adminHome");
-    }
-    const electionId = request.body.electionId;
-    const questions = await Question.getQuestions(electionId);
-    for (let i = 0; i < questions.length; i++) {
-      await Response.create({
-        questionId: questions[i].id,
-        voterId: request.user.id,
-        optionId: eval(`request.body.option${i + 1}`),
-      });
-    }
-    response.redirect(`/vote/${electionId}`);
-  }
-);
+})
 
 module.exports = app;

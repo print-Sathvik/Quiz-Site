@@ -19,7 +19,7 @@
                     </a>
                 </td>
                 <td class="flex-auto">
-                    <a href="/quiz/manage/<%= allQuiz[i].id %>/preview"><button class="bg-green-600 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2 w-24"> Start </button></a>
+                    <a href="/quiz/manage/<%= allQuiz[i].id %>/changeStatus"><button class="bg-green-600 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2 w-24"> Start </button></a>
                 </td>
             <% } else if(allQuiz[i].status == 1) { %>
                 <td class="flex-auto">
@@ -28,7 +28,7 @@
                     </a>
                 </td>
                 <td class="flex-auto">
-                    <button onclick= "changeStatus(<%= allQuiz[i].id %>)" class="bg-red-600 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2 w-24">End</button>
+                    <a href="/quiz/manage/<%= allQuiz[i].id %>/changeStatus"><button class="bg-red-600 text-white px-5 py-1.5 rounded font-medium mr-2 mb-2 w-24">End</button></a>
                 </td>
             <% } else { %>
                 <td class="flex-auto">
