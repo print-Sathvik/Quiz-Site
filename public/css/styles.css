@@ -1,5 +1,6 @@
 body {
   font-family: "Times New Roman", Times, serif;
+  color: black;
 }
 
 .voter:hover .trash-icon {
@@ -15,7 +16,7 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  background-color: #333;
+  background-color: purple;
 }
 
 .floatRight {
@@ -77,6 +78,7 @@ td {
   text-decoration: none;
 }
 
+
 .flash-success {
   background-color: rgb(90, 252, 40);
   margin-top: 10px;
@@ -89,4 +91,43 @@ td {
   margin-top: 10px;
   padding: 3px;
   width: fit-content;
+}
+
+.bodyst{
+  background-image: url('bg.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    color: #FACA15;
+}
+
+.playerhome{
+  background-image: url('bg.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    color: #FACA15;
+}
+
+.thankyoy{
+  background-image: url('bg.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    color: #FACA15;
+}
+
+.question{
+  background-image: url('bg.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+    color: #FACA15;
+    
+}
+
+.question .v1{
+border-left: 6px solid #FACA15;
+  height: 100%;
+  position: absolute;
+  top: 7%;
+  left: 10%;
+  margin-left: -3px;
+  
 }

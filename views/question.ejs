@@ -26,7 +26,7 @@
     </script>
     <script>
         // Set the date we're counting down to
-        var countDownDate = new Date(new Date("<%= startTime %>").getTime() + <%= quiz.timer %>*1000);
+        var countDownDate = new Date(new Date("<%= startTime %>").getTime() + <%= quiz.timer %>* 1000);
         
         // Update the count down every 1 second
         var x = setInterval(function() {
@@ -51,29 +51,31 @@
           if (distance < 0) {
             clearInterval(x);
             document.getElementById("timer").innerHTML = "EXPIRED";
-            window.location.href = "/quiz";
+            window.location.href = "/quiz/<%= quiz.id %>/leaderboard";
           }
         }, 1000);
     </script>
         
 </head>
-<body>
-    <%- include('userheader.ejs') %>
+<%- include('userheader.ejs') %>
+<body class="question">
+    
     <div class="grid grid-cols-6">
-        <div class="col-start-1 col-span-1" style="flex-grow: 1;overflow-y:scroll;">
-            <div>
-                <ul class="list-none">
+        <div class="col-start-1 col-span-1">
+            <div >
+                <ul class="list-none" style="list-style-type: disc;">
                     <% for(var i=0; i < questions.length; i++) { %>
-                        <li  class="voter">
+                        <li class="voter px-10 py-3" >
                             <a href="/quiz/<%= quizKey %>/question/<%= questions[i].id %>">Question <%= i+1 %></a>
                         </li>
-                    <% } %>
+                        <% } %>
                 </ul>
             </div>
         </div>
+        <div class="v1"></div>
         <div class="col-start-2 col-span-3">
-            <a href="/quiz/<%= quizKey %>/all"> <== All Questions</a>
-            <p id="timer" class="text-lg"></p>
+            <!-- <a href="/quiz/<%= quizKey %>/all"> <== All Questions</a> -->
+            
             <form method="post" action="/submitAnswer">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
                 <input type="hidden" name="questionId" value="<%= question.id %>">
@@ -104,6 +106,7 @@
                 </div>
             </form>
         </div>
+        <p id="timer" class="text-lg col-start-6 col-span-1"></p>
     </div>
 </body>
 </html>

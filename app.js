@@ -7,7 +7,7 @@ const {
   User,
   Question,
   Response,
-  StartTime
+  StartTime,
 } = require("./models");
 const bodyParser = require("body-parser");
 var cookieParser = require("cookie-parser");
@@ -230,7 +230,7 @@ app.get(
   async (request, response) => {
     const loggedInUserId = request.user.id;
     const loggedInUser = await Admin.findByPk(loggedInUserId);
-    const allQuiz = await Quiz.findAll({ where: {adminId: loggedInUserId}});
+    const allQuiz = await Quiz.findAll({ where: { adminId: loggedInUserId } });
     if (request.user.userType == "voter") {
       request.flash("error", "User cannot access that page");
       return response.redirect(request.headers.referer);
@@ -250,11 +250,15 @@ app.get(
   }
 );
 
-app.get("/quiz/new", connectEnsureLogin.ensureLoggedIn(), async(request, response) => {
-  response.render("newQuiz", {
-    csrfToken: request.csrfToken()
-  });
-})
+app.get(
+  "/quiz/new",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (request, response) => {
+    response.render("newQuiz", {
+      csrfToken: request.csrfToken(),
+    });
+  }
+);
 
 app.post(
   "/quiz",
@@ -269,18 +273,18 @@ app.post(
       return response.redirect("/adminHome");
     }
     try {
-        let quiz = await Quiz.findOne({ where: {key: request.body.key}});
-        if(quiz != null) {
-            throw "This key is currently in use by other quiz. Try some other key"
-        }
-        quiz = await Quiz.create({
-            title: request.body.title,
-            adminId: request.user.id,
-            key: request.body.key,
-            timer: request.body.timer,
-            score: request.body.score,
-            penalty: request.body.penalty,
-            status: 0
+      let quiz = await Quiz.findOne({ where: { key: request.body.key } });
+      if (quiz != null) {
+        throw "This key is currently in use by other quiz. Try some other key";
+      }
+      quiz = await Quiz.create({
+        title: request.body.title,
+        adminId: request.user.id,
+        key: request.body.key,
+        timer: request.body.timer,
+        score: request.body.score,
+        penalty: request.body.penalty,
+        status: 0,
       });
       if (request.accepts("html")) {
         return response.redirect("/adminHome");
@@ -305,47 +309,44 @@ app.get("/signout", (request, response, next) => {
 
 //To change quiz from Not started -> Started -> Restart
 app.get(
-    "/quiz/manage/:id/changeStatus",
-    connectEnsureLogin.ensureLoggedIn(),
-    async function (request, response) {
-      if (request.user.userType == "voter") {
-        request.flash("error", "User cannot access that page");
-        return response.redirect(request.headers.referer);
-      }
-      const quiz = await Quiz.findByPk(request.params.id);
-      try {
-        await quiz.changeStatus(
-          quiz.id,
-          quiz.status
-        );
-        return response.redirect("/adminHome");
-      } catch (error) {
-        console.log(error);
-        return response.status(422).json(error);
-      }
+  "/quiz/manage/:id/changeStatus",
+  connectEnsureLogin.ensureLoggedIn(),
+  async function (request, response) {
+    if (request.user.userType == "voter") {
+      request.flash("error", "User cannot access that page");
+      return response.redirect(request.headers.referer);
     }
+    const quiz = await Quiz.findByPk(request.params.id);
+    try {
+      await quiz.changeStatus(quiz.id, quiz.status);
+      return response.redirect("/adminHome");
+    } catch (error) {
+      console.log(error);
+      return response.status(422).json(error);
+    }
+  }
 );
 
 app.get(
-    "/quiz/manage/:id",
-    connectEnsureLogin.ensureLoggedIn(),
-    async function (request, response) {
-      if (request.user.userType == "voter") {
-        request.flash("error", "User cannot access that page");
-        return response.redirect(request.headers.referer);
-      }
-      const quiz = await Quiz.findByPk(request.params.id);
-      response.render("manageQuiz", {
-        quizTitle: quiz.title,
-        quizId: request.params.id,
-        key: quiz.key,
-        timer: quiz.timer,
-        score: quiz.score,
-        penalty: quiz.penalty,
-        csrfToken: request.csrfToken(),
-      });
+  "/quiz/manage/:id",
+  connectEnsureLogin.ensureLoggedIn(),
+  async function (request, response) {
+    if (request.user.userType == "voter") {
+      request.flash("error", "User cannot access that page");
+      return response.redirect(request.headers.referer);
     }
-  );
+    const quiz = await Quiz.findByPk(request.params.id);
+    response.render("manageQuiz", {
+      quizTitle: quiz.title,
+      quizId: request.params.id,
+      key: quiz.key,
+      timer: quiz.timer,
+      score: quiz.score,
+      penalty: quiz.penalty,
+      csrfToken: request.csrfToken(),
+    });
+  }
+);
 
 app.get(
   "/quiz/manage/:id/managePlayers",
@@ -356,7 +357,7 @@ app.get(
       return response.redirect(request.headers.referer);
     }
     const quizId = request.params.id;
-    const allUsers = await User.findAll({ where: {quizId: quizId } });
+    const allUsers = await User.findAll({ where: { quizId: quizId } });
     response.render("manageUsers", {
       quizId,
       allUsers,
@@ -381,13 +382,18 @@ app.post(
         password: request.body.password,
       });
       if (request.accepts("html")) {
-        return response.redirect(`/quiz/manage/${request.body.quizId}/managePlayers`);
+        return response.redirect(
+          `/quiz/manage/${request.body.quizId}/managePlayers`
+        );
       } else {
         return response.json(user);
       }
     } catch (error) {
       console.log(error);
-      request.flash("error", "This user ID already exists, please give a diferent ID");
+      request.flash(
+        "error",
+        "This user ID already exists, please give a diferent ID"
+      );
       response.redirect(`/quiz/manage/${request.body.quizId}/managePlayers`);
     }
   }
@@ -434,14 +440,14 @@ app.post(
         if (opt == undefined) {
           break;
         } else {
-          appendedHints = appendedHints + opt + "|~|" ;
+          appendedHints = appendedHints + opt + "|~|";
         }
       }
       await Question.create({
         quizId: request.body.quizId,
         title: request.body.title,
         answer: request.body.answer,
-        hints: appendedHints
+        hints: appendedHints,
       });
       request.flash("success", "Question added Successfully");
       return response.redirect(
@@ -450,14 +456,13 @@ app.post(
     } catch (error) {
       console.log(error);
       request.flash("error", error);
-      response.redirect(
-        `/quiz/manage/${request.body.quizId}/newQuestion`
-      );
+      response.redirect(`/quiz/manage/${request.body.quizId}/newQuestion`);
     }
   }
 );
 
-app.get("/quiz/manage/:id/manageQuestions",
+app.get(
+  "/quiz/manage/:id/manageQuestions",
   connectEnsureLogin.ensureLoggedIn(),
   async (request, response) => {
     if (request.user.userType == "voter") {
@@ -470,7 +475,7 @@ app.get("/quiz/manage/:id/manageQuestions",
       if (quiz.status == 1) {
         throw "Quiz has started. You cannot modify the questions while the quiz is going on";
       }
-      const questions = await Question.findAll({ where: {quizId}});
+      const questions = await Question.findAll({ where: { quizId } });
       response.render("manageQuestions", {
         quizId,
         questions,
@@ -484,7 +489,10 @@ app.get("/quiz/manage/:id/manageQuestions",
   }
 );
 
-app.delete("/questions/manage/:questionId", connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
+app.delete(
+  "/questions/manage/:questionId",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (request, response) => {
     if (request.user.userType == "voter") {
       request.flash("error", "User cannot access that page");
       return response.redirect(request.headers.referer);
@@ -498,204 +506,251 @@ app.delete("/questions/manage/:questionId", connectEnsureLogin.ensureLoggedIn(),
   }
 );
 
-
-app.get("/quiz", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
+app.get(
+  "/quiz",
+  connectEnsureLogin.ensureLoggedIn({ redirectTo: "/userLogin" }),
+  async (request, response) => {
     if (request.user.userType == "admin") {
-        request.flash("error", "Admin cannot access player page");
-        return response.redirect(request.headers.referer);
+      request.flash("error", "Admin cannot access player page");
+      return response.redirect(request.headers.referer);
     }
     response.render("playerHome", {
-        csrfToken: request.csrfToken()
-    })
-})
+      csrfToken: request.csrfToken(),
+    });
+  }
+);
 
-app.post("/findQuiz", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
+app.post(
+  "/findQuiz",
+  connectEnsureLogin.ensureLoggedIn({ redirectTo: "/userLogin" }),
+  async (request, response) => {
     if (request.user.userType == "admin") {
-        request.flash("error", "Admin cannot access player page");
-        return response.redirect(request.headers.referer);
+      request.flash("error", "Admin cannot access player page");
+      return response.redirect(request.headers.referer);
     }
     const quizKey = request.body.quizKey;
-    const quiz = await Quiz.findOne({ where: {key: quizKey}});
+    const quiz = await Quiz.findOne({ where: { key: quizKey } });
     try {
-        if(quiz == null) {
-            throw "Wrong Key";
-        }
-        const started = await StartTime.findOne({where: {userId: request.user.id}});
-        if(started == null) {
-            await StartTime.create({
-                userId: request.user.id,
-                date: new Date()
-            });
-        }
-        response.redirect(`/quiz/${quizKey}/all`);
+      if (quiz == null) {
+        throw "Wrong Key";
+      }
+      const started = await StartTime.findOne({
+        where: { userId: request.user.id },
+      });
+      if (started == null) {
+        await StartTime.create({
+          userId: request.user.id,
+          date: new Date(),
+        });
+      }
+      response.redirect(`/quiz/${quizKey}/all`);
     } catch (error) {
-        console.log(error);
-        request.flash("error", error);
-        response.redirect(`/quiz`);
+      console.log(error);
+      request.flash("error", error);
+      response.redirect(`/quiz`);
     }
-});
+  }
+);
 
-app.get("/quiz/:quizKey/all", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
+app.get(
+  "/quiz/:quizKey/all",
+  connectEnsureLogin.ensureLoggedIn({ redirectTo: "/userLogin" }),
+  async (request, response) => {
     if (request.user.userType == "admin") {
-        request.flash("error", "Admin cannot access player page");
-        return response.redirect(request.headers.referer);
+      request.flash("error", "Admin cannot access player page");
+      return response.redirect(request.headers.referer);
     }
     const quizKey = request.params.quizKey;
-    const quiz = await Quiz.findOne({ where: {key: quizKey}});
-    const question = await Question.findOne( {where: {quizId: quiz.id}});
+    const quiz = await Quiz.findOne({ where: { key: quizKey } });
+    const question = await Question.findOne({ where: { quizId: quiz.id } });
     response.redirect(`/quiz/${quizKey}/question/${question.id}`);
-})
+  }
+);
 
-app.get("/quiz/:quizKey/question/:id", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
+app.get(
+  "/quiz/:quizKey/question/:id",
+  connectEnsureLogin.ensureLoggedIn({ redirectTo: "/userLogin" }),
+  async (request, response) => {
     if (request.user.userType == "admin") {
-        request.flash("error", "Admin cannot access player page");
-        return response.redirect(request.headers.referer);
+      request.flash("error", "Admin cannot access player page");
+      return response.redirect(request.headers.referer);
     }
     const quizKey = request.params.quizKey;
-    const quiz = await Quiz.findOne({ where: {key: quizKey}});
+    const quiz = await Quiz.findOne({ where: { key: quizKey } });
     const question = await Question.findByPk(request.params.id);
-    const questions = await Question.findAll( {where: {quizId: quiz.id}});
-    const userResponse = await Response.findOne({ where: {userId:request.user.id, questionId: request.params.id}});
-    const startTime = await StartTime.findOne({where: {userId: request.user.id}});
-    let noOfHints = 0;
-    if(userResponse != null) {
-        noOfHints = userResponse.hintsUsed
-    }
-    response.render("question", { 
-        question,
-        quiz,
-        questions,
-        quizKey: quiz.key,
-        noOfHints,
-        startTime: startTime.date.toLocaleString(),
-        csrfToken: request.csrfToken()
+    const questions = await Question.findAll({ where: { quizId: quiz.id } });
+    const userResponse = await Response.findOne({
+      where: { userId: request.user.id, questionId: request.params.id },
     });
-})
+    const startTime = await StartTime.findOne({
+      where: { userId: request.user.id },
+    });
+    let noOfHints = 0;
+    if (userResponse != null) {
+      noOfHints = userResponse.hintsUsed;
+    }
+    response.render("question", {
+      question,
+      quiz,
+      questions,
+      quizKey: quiz.key,
+      noOfHints,
+      startTime: startTime.date.toLocaleString(),
+      csrfToken: request.csrfToken(),
+    });
+  }
+);
 
-app.post("/submitAnswer", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
+app.post(
+  "/submitAnswer",
+  connectEnsureLogin.ensureLoggedIn({ redirectTo: "/userLogin" }),
+  async (request, response) => {
     if (request.user.userType == "admin") {
-        request.flash("error", "Admin cannot access player page");
-        return response.redirect(request.headers.referer);
+      request.flash("error", "Admin cannot access player page");
+      return response.redirect(request.headers.referer);
     }
     const question = await Question.findByPk(request.body.questionId);
     const quiz = await Quiz.findByPk(question.quizId);
-    const answer = request.body.answer
+    const answer = request.body.answer;
     try {
-        if(answer.localeCompare(question.answer, undefined, { sensitivity: 'base' }) != 0) {
-            throw "Wrong Answer";
-        }
-        else {
-            const userResponse = await Response.findOne({where: {userId: request.user.id, questionId: request.body.questionId}});
-            if(userResponse == null) {
-                await Response.create({
-                    userId:request.user.id,
-                    questionId: request.body.questionId,
-                    hintsUsed: 0,
-                    status: true
-                });
+      if (
+        answer.localeCompare(question.answer, undefined, {
+          sensitivity: "base",
+        }) != 0
+      ) {
+        throw "Wrong Answer";
+      } else {
+        const userResponse = await Response.findOne({
+          where: {
+            userId: request.user.id,
+            questionId: request.body.questionId,
+          },
+        });
+        if (userResponse == null) {
+          await Response.create({
+            userId: request.user.id,
+            questionId: request.body.questionId,
+            hintsUsed: 0,
+            status: true,
+          });
+        } else if (userResponse.status == false) {
+          await Response.update(
+            { status: true },
+            {
+              where: {
+                userId: request.user.id,
+                questionId: request.body.questionId,
+              },
             }
-            else if(userResponse.status == false) {
-                await Response.update({status:true}, {
-                    where: {
-                        userId:request.user.id,
-                        questionId: request.body.questionId
-                    }
-                });
-            }
-            request.flash("success", "Correct answer");
-            response.redirect(`/quiz/${quiz.key}/question/${question.id}`);
+          );
         }
-    } catch(error) {
-        console.log(error);
-        request.flash("error", error);
+        request.flash("success", "Correct answer");
         response.redirect(`/quiz/${quiz.key}/question/${question.id}`);
+      }
+    } catch (error) {
+      console.log(error);
+      request.flash("error", error);
+      response.redirect(`/quiz/${quiz.key}/question/${question.id}`);
     }
-});
+  }
+);
 
-app.get("/quiz/:questionId/hint", connectEnsureLogin.ensureLoggedIn({redirectTo: "/userLogin"}), async(request, response) => {
+app.get(
+  "/quiz/:questionId/hint",
+  connectEnsureLogin.ensureLoggedIn({ redirectTo: "/userLogin" }),
+  async (request, response) => {
     if (request.user.userType == "admin") {
-        request.flash("error", "Admin cannot access player page");
-        return response.redirect(request.headers.referer);
+      request.flash("error", "Admin cannot access player page");
+      return response.redirect(request.headers.referer);
     }
     const questionId = request.params.questionId;
     const question = await Question.findByPk(questionId);
     const quiz = await Quiz.findByPk(question.quizId);
-    const userResponse = await Response.findOne({ where: {userId:request.user.id, questionId: questionId}});
+    const userResponse = await Response.findOne({
+      where: { userId: request.user.id, questionId: questionId },
+    });
     try {
-        if(userResponse == null) {
-            await Response.create({
-                userId:request.user.id,
-                questionId,
-                hintsUsed: 1,
-                status: false
-            });
+      if (userResponse == null) {
+        await Response.create({
+          userId: request.user.id,
+          questionId,
+          hintsUsed: 1,
+          status: false,
+        });
+      } else if (userResponse.status == true) {
+        throw "You have already answered this question correctly. So further hints cannot be given";
+      } else {
+        const hints = userResponse.hintsUsed;
+        const combinedHints = question.hints;
+        const maxHints = (combinedHints.match(/\|~\|/g) || []).length;
+        if (userResponse.hintsUsed >= maxHints) {
+          throw "No more hints are available";
         }
-        else if(userResponse.status == true) {
-            throw "You have already answered this question correctly. So further hints cannot be given"
-        }
-        else {
-            const hints = userResponse.hintsUsed;
-            const combinedHints = question.hints;
-            const maxHints = (combinedHints.match(/\|~\|/g) || []).length;
-            if(userResponse.hintsUsed >= maxHints) {
-                throw "No more hints are available";
-            }
-            await Response.update({hintsUsed: hints+1}, {where: {userId:request.user.id, questionId: questionId}});
-        }
-        return response.redirect(`/quiz/${quiz.key}/question/${questionId}`);
-    } catch(error) {
-        console.log(error);
-        request.flash("error", error);
-        response.status(200);
-        response.send(error);
+        await Response.update(
+          { hintsUsed: hints + 1 },
+          { where: { userId: request.user.id, questionId: questionId } }
+        );
+      }
+      return response.redirect(`/quiz/${quiz.key}/question/${questionId}`);
+    } catch (error) {
+      console.log(error);
+      request.flash("error", error);
+      response.status(200);
+      response.send(error);
     }
-})
+  }
+);
 
-app.get("/quiz/:id/leaderboard", connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
+app.get(
+  "/quiz/:id/leaderboard",
+  connectEnsureLogin.ensureLoggedIn(),
+  async (request, response) => {
     if (request.user.userType == "voter") {
-        request.flash("error", "User cannot access that page");
-        return response.redirect(request.headers.referer);
+      request.flash("error", "User cannot access that page");
+      return response.redirect(request.headers.referer);
     }
     const quizId = request.params.id;
     const users = await User.findAll({
-        where: {quizId},
-        attributes: ['id', 'userId']
+      where: { quizId },
+      attributes: ["id", "userId"],
     });
     //const questions = await Question.findAll({ where:{quizId}, attributes: ['id'] });
     let userpkIds = new Array(users.length);
     for (let i = 0; i < users.length; i++) {
-        userpkIds[i] = users[i].id;
-        users[i].score = 0;
+      userpkIds[i] = users[i].id;
+      users[i].score = 0;
     }
     console.log("===================", userpkIds);
     const responses = await Response.findAll({
-        where: {
-            status: true,
-            userId: {
-                [Op.or]: userpkIds
-            }
-        }
+      where: {
+        status: true,
+        userId: {
+          [Op.or]: userpkIds,
+        },
+      },
     });
 
     const quiz = await Quiz.findByPk(quizId);
     const maxScore = quiz.score;
     const penalty = quiz.penalty;
     for (let i = 0; i < users.length; i++) {
-        for (let j = 0; j < responses.length; j++) {
-            if(responses[j].userId == users[i].id) {
-                users[i].score = users[i].score + maxScore - penalty * responses[j].hintsUsed
-            }
+      for (let j = 0; j < responses.length; j++) {
+        if (responses[j].userId == users[i].id) {
+          users[i].score =
+            users[i].score + maxScore - penalty * responses[j].hintsUsed;
         }
+      }
     }
-    users.sort(function(a, b){
-        return b.score - a.score;
+    users.sort(function (a, b) {
+      return b.score - a.score;
     });
-    
+
     console.log(users);
     response.render("leaderboard", {
-        users,
-        csrfToken: request.csrfToken()
+      users,
+      csrfToken: request.csrfToken(),
     });
-})
+  }
+);
 
 module.exports = app;
