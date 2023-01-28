@@ -285,11 +285,12 @@ app.post(
       if (quiz != null) {
         throw "This key is currently in use by other quiz. Try some other key";
       }
+      const IndiaTimer = request.body.timer + 19800
       quiz = await Quiz.create({
         title: request.body.title,
         adminId: request.user.id,
         key: request.body.key,
-        timer: request.body.timer,
+        timer: IndiaTimer,
         score: request.body.score,
         penalty: request.body.penalty,
         status: 0,
