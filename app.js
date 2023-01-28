@@ -117,13 +117,21 @@ app.use(function (request, response, next) {
 });
 
 app.get(
-  "/",
+  "/admin",
   connectEnsureLogin.ensureLoggedOut({ redirectTo: "/adminHome" }),
   async (request, response) => {
     response.render("index", {
       title: "COSC quiz",
       csrfToken: request.csrfToken(),
     });
+  }
+);
+
+app.get(
+  "/",
+  connectEnsureLogin.ensureLoggedOut({ redirectTo: "/adminHome" }),
+  async (request, response) => {
+    response.redirect("/userLogin");
   }
 );
 
@@ -304,6 +312,15 @@ app.get("/signout", (request, response, next) => {
       return next(err);
     }
     response.redirect("/");
+  });
+});
+
+app.get("/adminSignout", (request, response, next) => {
+  request.logout((err) => {
+    if (err) {
+      return next(err);
+    }
+    response.redirect("/admin");
   });
 });
 
@@ -534,6 +551,13 @@ app.post(
       if (quiz == null) {
         throw "Wrong Key";
       }
+      const user = await User.findOne({where: {userId: request.user.userId, quizId: quiz.id}})
+      if(user == null) {
+        throw "Ask admin to add you to this quiz"
+      }
+      request.user.id = user.id;
+      request.user.quizId = user.quizId;
+      console.log(request.user);
       const started = await StartTime.findOne({
         where: { userId: request.user.id },
       });
@@ -627,15 +651,20 @@ app.post(
           },
         });
         if (userResponse == null) {
+          const startTime = await StartTime.findOne({where: {userId: request.user.id}});
+          const timeElapsed = new Date().getTime() - new Date(startTime.date).getTime()
           await Response.create({
             userId: request.user.id,
             questionId: request.body.questionId,
             hintsUsed: 0,
+            completionTime: Math.floor(timeElapsed/10),
             status: true,
           });
         } else if (userResponse.status == false) {
+          const startTime = await StartTime.findOne({where: {userId: request.user.id}});
+          const timeElapsed = new Date().getTime() - new Date(startTime.date).getTime()
           await Response.update(
-            { status: true },
+            { status: true, completionTime: Math.floor(timeElapsed/10) },
             {
               where: {
                 userId: request.user.id,
@@ -666,7 +695,7 @@ app.get(
     const questionId = request.params.questionId;
     const question = await Question.findByPk(questionId);
     const quiz = await Quiz.findByPk(question.quizId);
-    const userResponse = await Response.findOne({
+    let userResponse = await Response.findOne({
       where: { userId: request.user.id, questionId: questionId },
     });
     try {
@@ -674,9 +703,23 @@ app.get(
         await Response.create({
           userId: request.user.id,
           questionId,
-          hintsUsed: 1,
+          hintsUsed: 0,
+          completionTime: 0,
           status: false,
         });
+        userResponse = await Response.findOne({
+          where: { userId: request.user.id, questionId: questionId },
+        });
+        const hints = userResponse.hintsUsed;
+        const combinedHints = question.hints;
+        const maxHints = (combinedHints.match(/\|~\|/g) || []).length;
+        if (userResponse.hintsUsed >= maxHints) {
+          throw "No more hints are available";
+        }
+        await Response.update(
+          { hintsUsed: hints + 1 },
+          { where: { userId: request.user.id, questionId: questionId } }
+        );
       } else if (userResponse.status == true) {
         throw "You have already answered this question correctly. So further hints cannot be given";
       } else {
@@ -719,6 +762,7 @@ app.get(
     for (let i = 0; i < users.length; i++) {
       userpkIds[i] = users[i].id;
       users[i].score = 0;
+      users[i].time = 0; // time in milliseconds/10
     }
     console.log("===================", userpkIds);
     const responses = await Response.findAll({
@@ -736,20 +780,61 @@ app.get(
     for (let i = 0; i < users.length; i++) {
       for (let j = 0; j < responses.length; j++) {
         if (responses[j].userId == users[i].id) {
-          users[i].score =
-            users[i].score + maxScore - penalty * responses[j].hintsUsed;
+          users[i].score = users[i].score + maxScore - penalty * responses[j].hintsUsed;
+          if(users[i].time < responses[j].completionTime) {
+            users[i].time = responses[j].completionTime/100
+          }
         }
       }
     }
     users.sort(function (a, b) {
-      return b.score - a.score;
+      return b.score - a.score || a.time - b.time;
     });
 
+    let distance, hours, minutes, seconds;
+    for (let i = 0; i < users.length; i++) {
+      distance = users[i].time*1000;
+      hours = Math.floor(distance / (1000 * 60 * 60));
+      minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      seconds = (distance % (1000 * 60)) / 1000;
+      users[i].time = (hours? hours + "h " : "") + (minutes? minutes + "m " : "") + seconds + "s ";
+    }
     console.log(users);
     response.render("leaderboard", {
       users,
       csrfToken: request.csrfToken(),
     });
+  }
+);
+
+app.get(
+  "/quiz/:id/complete",
+  connectEnsureLogin.ensureLoggedIn({ redirectTo: "/userLogin" }),
+  async (request, response) => {
+    if (request.user.userType == "admin") {
+      request.flash("error", "Admin cannot access player page");
+      return response.redirect(request.headers.referer);
+    }
+    const responses = await Response.findAll({where: {userId: request.user.id}});
+
+    const quiz = await Quiz.findByPk(request.params.id);
+    const maxScore = quiz.score;
+    const penalty = quiz.penalty;
+    let score = 0;
+    let time = 0;
+    for (let j = 0; j < responses.length; j++) {
+        score = score + maxScore - penalty * responses[j].hintsUsed;
+        if(time < responses[j].completionTime) {
+          time = responses[j].completionTime/100
+      }
+    }
+    let distance, hours, minutes, seconds;
+    distance = time*1000;
+    hours = Math.floor(distance / (1000 * 60 * 60));
+    minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+    seconds = (distance % (1000 * 60)) / 1000;
+    time = (hours? hours + "h " : "") + (minutes? minutes + "m " : "") + seconds + "s ";
+    response.render("thankyou", {score, time});
   }
 );
 

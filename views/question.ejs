@@ -44,22 +44,21 @@
           var seconds = Math.floor((distance % (1000 * 60)) / 1000);
         
           // Display the result in the element with id="timer"
-          document.getElementById("timer").innerHTML = days + "d " + hours + "h "
-          + minutes + "m " + seconds + "s ";
+          document.getElementById("timer").innerHTML = (days? days + "d " : "") + (hours? hours + "h " : "") + minutes + "m " + seconds + "s ";
         
           // If the count down is finished, write some text
           if (distance < 0) {
             clearInterval(x);
             document.getElementById("timer").innerHTML = "EXPIRED";
-            window.location.href = "/quiz/<%= quiz.id %>/leaderboard";
+            window.location.href = "/quiz/<%= quiz.id %>/complete";
           }
         }, 1000);
     </script>
         
 </head>
-<%- include('userheader.ejs') %>
+
 <body class="question">
-    
+    <%- include('userheader.ejs') %>
     <div class="grid grid-cols-6">
         <div class="col-start-1 col-span-1">
             <div >

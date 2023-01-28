@@ -80,14 +80,16 @@ td {
 
 
 .flash-success {
-  background-color: rgb(90, 252, 40);
+  background-color: rgb(60, 255, 0);
+  font-weight: bold;
   margin-top: 10px;
   padding: 3px;
   width: fit-content;
 }
 
 .flash-error {
-  background-color: rgb(250, 121, 121);
+  background-color: rgb(250, 7, 7);
+  font-weight: bold;
   margin-top: 10px;
   padding: 3px;
   width: fit-content;
