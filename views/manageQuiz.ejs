@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<%= csrfToken %>" />
     <link href="/css/styles.css" rel="stylesheet">
-    <title>COSC Quiz</title>
+    <title>Decipher</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
@@ -18,11 +18,16 @@
                 <% for(var i=0; i<messages.error.length; i++) { %>
                         <p class="flash-error"> <%= messages.error[i] %></p>
                 <% } %>
-              <% } %>
-            <h3 class="text-lg py-2 text-red-600">Share this Key with the participants: <%= key %></h3>
-            <p>Time Limit for each question: <%= timer %> seconds</p>
-            <p>Score of each question: <%= score %></p>
-            <p>Penalty for each hint: <%=penalty%></p>
+            <% } %>
+            <div class="flex gap-2 py-2 justify-center">
+                <div class="flex-none">
+                    <a href="/quiz/manage/<%= quizId %>/edit"><button class="bg-green-600 text-white px-5 py-2 rounded font-medium mr-2 mb-2"> Edit Details </button></a>
+                </div>
+            </div>
+            <h3 class="text-xl py-2">Share this Key with the participants: <span class="text-red-600 text-xl"><%= key %></span></h3>
+            <p class="text-lg">Quiz Duration in seconds: <%= timer %> seconds</p>
+            <p class="text-lg">Score of each question: <%= score %></p>
+            <p class="text-lg">Penalty for each hint: <%=penalty%></p>
             <div>
                 <p class="text-green-600 text-lg py-6"><a href="/quiz/manage/<%= quizId %>/managePlayers">Manage Participants</a></p>
                 <p class="text-green-600 text-lg py-6"><a href="/quiz/manage/<%= quizId %>/manageQuestions">Manage Questions</a></p>

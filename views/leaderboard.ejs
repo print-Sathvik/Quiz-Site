@@ -13,7 +13,7 @@
 <body>
     <section class="main-content">
         <div class="container">
-            <h1 style="text-align: center;">Top Gainers</h1>
+            <h1 style="text-align: center;">Top Deciphers</h1>
             <br>
             <br>
             <div class="row">
@@ -21,15 +21,15 @@
                     <div class="col-sm-4">
                         <div class="leaderboard-card">
                             <div class="leaderboard-card__top">
-                                <h3 class="text-center"><%= users[1].score %></h3>
+                                <h3 class="text-center" style="color: black"><%= users[1].score %></h3>
                             </div>
                             <div class="leaderboard-card__body">
                                 <div class="text-center circle-img mb-2" >
                                     <p style="font-size: 50px;">&#128513;</p>
-                                    <h5 class="mb-0"><%= users[1].userId %></h5>
+                                    <h5 class="mb-0" style="color:black"><%= users[1].userId %></h5>
                                     <hr>
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <span><i class="fa fa-map-marker"></i> <%= users[1].time %></span>
+                                        <span style="color:black"><i class="fa fa-solid fa-clock"></i> <%= users[1].time %></span>
                                         <button class="btn btn-outline-success btn-sm">Congratulate</button>
                                     </div>
                                 </div>
@@ -41,15 +41,15 @@
                     <div class="col-sm-4">
                         <div class="leaderboard-card leaderboard-card--first">
                             <div class="leaderboard-card__top">
-                                <h3 class="text-center"><%= users[0].score %></h3>
+                                <h3 class="text-center" style="color:black"><%= users[0].score %></h3>
                             </div>
                             <div class="leaderboard-card__body">
                                 <div class="text-center circle-img mb-2">
                                     <p style="font-size: 50px;">&#128526;</p>
-                                    <h5 class="mb-0"><%= users[0].userId %></h5>
+                                    <h5 class="mb-0" style="color:black"><%= users[0].userId %></h5>
                                     <hr>
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <span><i class="fa fa-map-marker"></i> <%= users[0].time %></span>
+                                        <span style="color:black"><i class="fa-solid fa-clock"></i> <%= users[0].time %></span>
                                         <button class="btn btn-outline-success btn-sm">Congratulate</button>
                                     </div>
                                 </div>
@@ -61,15 +61,15 @@
                     <div class="col-sm-4">
                         <div class="leaderboard-card">
                             <div class="leaderboard-card__top">
-                                <h3 class="text-center"><%= users[2].score %></h3>
+                                <h3 class="text-center" style="color:black"><%= users[2].score %></h3>
                             </div>
                             <div class="leaderboard-card__body">
                                 <div class="text-center circle-img mb-2">
                                     <p style="font-size: 50px;">&#128512;</p>
-                                    <h5 class="mb-0"><%= users[2].userId %></h5>
+                                    <h5 class="mb-0" style="color:black"><%= users[2].userId %></h5>
                                     <hr>
                                     <div class="d-flex justify-content-between align-items-center">
-                                        <span><i class="fa fa-map-marker"></i> <%= users[2].time %></span>
+                                        <span style="color:black"><i class="fa-solid fa-clock"></i> <%= users[2].time %></span>
                                         <button class="btn btn-outline-success btn-sm">Congratulate</button>
                                     </div>
                                 </div>
@@ -94,7 +94,7 @@
                         <th>Congratulate</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody style="color: black;">
                     <% for(var i=3; i < users.length; i++) { %>
                     <tr>
                         <td><%= i+1 %></td>
@@ -109,6 +109,9 @@
                         <td>
                             <div class="d-flex align-items-baseline">
                                 <h4 class="mr-1"><%= users[i].score %></h4>
+                                <% if(users[i].penalty != 0) { %>
+                                    <small style="color: red;"><i class="fa fa-arrow-down"></i><%= users[i].penalty %></small>
+                                <% } %>
                             </div>
                         </td>
                         <td><%= users[i].time %></td>

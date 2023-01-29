@@ -13,8 +13,8 @@
     <%- include('header.ejs') %>
     <div class="grid grid-cols-6">
         <div class="col-start-3 col-span-2">
-          <h6 class="py-4">Enter all the details</h6>
-          <form action="/quiz" method="post">
+          <h6 class="py-4 text-xl">Edit quiz details</h6>
+          <form action="/quiz/manage/<%= quizId %>/edit" method="post">
             <% if(messages && messages.error && messages.error.length > 0)  { %>
                 <% for(var i=0; i<messages.error.length; i++) { %>
                         <p class="flash-error"> <%= messages.error[i] %></p>
@@ -23,26 +23,26 @@
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <div class="py-3">
                 <label for="title">Title:</label>
-                <input type="text" name="title" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
+                <input type="text" name="title" class="border border-gray-300 text-gray-900 rounded p-2 w-full" value="<%= quizTitle %>">
             </div>
             <div class="py-3">
                 <label for="key" style="color: red;">Quiz Key(share it with users when you want them to start):</label>
-                <input type="text" name="key" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
+                <input type="text" name="key" class="border border-gray-300 text-gray-900 rounded p-2 w-full" value="<%= key %>">
             </div>  
             <div class="py-3"> 
                 <label for="timer">Time limit for entire quiz in seconds:</label>
-                <input type="text" name="timer" class="border border-gray-300 text-gray-900 rounded p-2 w-full" value="1200">
+                <input type="text" name="timer" class="border border-gray-300 text-gray-900 rounded p-2 w-full" value="<%= timer %>">
             </div>
             <div class="py-3"> 
                 <label for="score">Score for each question:</label>
-                <input type="text" name="score" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
+                <input type="text" name="score" class="border border-gray-300 text-gray-900 rounded p-2 w-full" value="<%= score %>">
             </div>
             <div class="py-3"> 
                 <label for="penalty">Penalty for each hint:</label>
-                <input type="text" name="penalty" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
+                <input type="text" name="penalty" class="border border-gray-300 text-gray-900 rounded p-2 w-full" value="<%= penalty %>">
             </div>
             <div class="py-3 centerElement"> 
-                <button type="submit" class="text-white bg-green-600 hover:bg-green-800 font-medium rounded px-5 py-2">Create</button>        
+                <button type="submit" class="text-white bg-green-600 hover:bg-green-800 font-medium rounded px-5 py-2">Save</button>        
             </div>  
             </form>
         </div>

@@ -4,37 +4,34 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="csrf-token" content= "<%= csrfToken %>">
+    <meta name="csrf-token" content= "7632b3c2-35c0-4f8b-a3fc-28b78d67f89e">
     <link href="/css/styles.css" rel="stylesheet" />
-    <title><%= title %></title>
+    <title>Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     
 </head>
-<body class="bodyst" id="bodyid">
-    <%- include("header.ejs") %>
+<body class="bodyst">
+    <ul class="menuBackground">
+    <li class="menuitem"><a href="/adminSignout" class="block py-2 pl-3 pr-4 text-white-700 rounded hover:bg-white-100 md:hover:bg-transparent md:border-0 md:hover:text-yellow-400 md:p-0 dark:text-gray-400 md:dark:hover:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Signout</a></li>
+    <li class="menuitem"><a href="/adminHome" class="block py-2 pl-3 pr-4 text-white-700 rounded hover:bg-white-100 md:hover:bg-transparent md:border-0 md:hover:text-yellow-400 md:p-0 dark:text-gray-400 md:dark:hover:text-white dark:hover:bg-gray-700 dark:hover:text-white md:dark:hover:bg-transparent">Home</a></li>
+
+    <li class="text-4xl font-semibold"><a href="/adminHome" style="color: #FACA15;">
+        Decipher</a></li>
+</ul>
+
+
     <div class="grid grid-cols-6">
         <div class="col-start-3 col-span-2">
           <h6 class="py-4">Login to your account</h6>
-          <form action= <%= formAction %> method="post">
-            <% if(messages && messages.error && messages.error.length > 0)  { %>
-                <% for(var i=0; i<messages.error.length; i++) { %>
-                        <p class="flash-error"> <%= messages.error[i] %></p>
-                        <script>
-                            var bo = document.getElementById("bodyid")
-                            bo.classList.add("shakeDiv");
-                        </script>
-                <% } %>
-              <% } %>
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+          <form action= /userSession method="post">
+            
+            <input type="hidden" name="_csrf" value="7632b3c2-35c0-4f8b-a3fc-28b78d67f89e">
             <div class="py-3">
-                <% if(formAction == "/session")  { %>
-                    <label for="email">Email:</label>
-                    <input type="email" name="email" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
-                <% } else { %>
+                
                     <label for="voterid">Player ID:</label>
                     <input type="text" name="userid" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
-                <% } %>
+                
             </div>  
             <div class="py-3"> 
                 <label for="password">Password:</label>

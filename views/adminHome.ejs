@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="<%= csrfToken %>" />
     <link href="/css/styles.css" rel="stylesheet">
-    <title>COSC Quiz</title>
+    <title>Decipher</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         var token = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
@@ -53,6 +53,11 @@
             <% if(messages && messages.error && messages.error.length > 0) { %>
                 <% for(var i=0; i<messages.error.length; i++) { %>
                         <p class="flash-error"> <%= messages.error[i] %></p>
+                <% } %>
+            <% } %>
+            <% if(messages && messages.success && messages.success.length > 0)  { %>
+                <% for(var i=0; i<messages.success.length; i++) { %>
+                        <p class="flash-success"> <%= messages.success[i] %></p>
                 <% } %>
             <% } %>
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
