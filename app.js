@@ -121,7 +121,7 @@ app.get(
   connectEnsureLogin.ensureLoggedOut({ redirectTo: "/adminHome" }),
   async (request, response) => {
     response.render("index", {
-      title: "COSC quiz",
+      title: "Decipher",
       csrfToken: request.csrfToken(),
     });
   }
@@ -134,6 +134,14 @@ app.get(
     response.redirect("/userLogin");
   }
 );
+
+app.get("/undefined", connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
+  if (request.user.userType == "admin") {
+    request.flash("error", "Admin cannot access player page");
+    return response.redirect(request.headers.referer);
+  }
+  response.redirect("/quiz");
+})
 
 app.get(
   "/signup",
@@ -238,14 +246,14 @@ app.get(
   async (request, response) => {
     const loggedInUserId = request.user.id;
     const loggedInUser = await Admin.findByPk(loggedInUserId);
-    const allQuiz = await Quiz.findAll({ where: { adminId: loggedInUserId } });
+    const allQuiz = await Quiz.findAll({ where: { adminId: loggedInUserId }, order: [['id', 'ASC']] });
     if (request.user.userType == "voter") {
       request.flash("error", "User cannot access that page");
       return response.redirect(request.headers.referer);
     }
     if (request.accepts("html")) {
       response.render("adminHome", {
-        title: "COSC Quiz",
+        title: "Decipher",
         firstName: loggedInUser.firstName,
         allQuiz,
         csrfToken: request.csrfToken(),
@@ -358,7 +366,7 @@ app.get(
       quizTitle: quiz.title,
       quizId: request.params.id,
       key: quiz.key,
-      timer: quiz.timer,
+      timer: quiz.timer - 19800, //for hosting the site added +5:30 secs for India
       score: quiz.score,
       penalty: quiz.penalty,
       csrfToken: request.csrfToken(),
@@ -416,6 +424,57 @@ app.post(
     }
   }
 );
+
+app.get("/quiz/manage/:id/edit", connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
+  if (request.user.userType == "voter") {
+    request.flash("error", "User cannot access that page");
+    return response.redirect(request.headers.referer);
+  }
+  const quiz = await Quiz.findByPk(request.params.id);
+  response.render("editQuiz", {
+    quizTitle: quiz.title,
+    quizId: request.params.id,
+    key: quiz.key,
+    timer: quiz.timer - 19800,
+    score: quiz.score,
+    penalty: quiz.penalty,
+    csrfToken: request.csrfToken(),
+  });
+})
+
+app.post("/quiz/manage/:id/edit", connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
+  if (request.user.userType == "voter") {
+    request.flash("error", "User cannot access that page");
+    return response.redirect(request.headers.referer);
+  }
+  try {
+    let quiz = await Quiz.findOne({ where: { key: request.body.key, id: {[Op.ne]: request.params.id} } });
+    if (quiz != null) {
+      throw "This key is currently in use by other quiz. Try some other key";
+    }
+    const IndiaTimer = parseInt(request.body.timer) + 19800
+    quiz = await Quiz.update({
+      title: request.body.title,
+      key: request.body.key,
+      timer: IndiaTimer,
+      score: request.body.score,
+      penalty: request.body.penalty
+    }, {
+      where: {
+        id: request.params.id
+      }
+    });
+    if (request.accepts("html")) {
+      request.flash("success", "Quiz details updated successfully");
+      return response.redirect("/adminHome");
+    } else {
+      return response.json(quiz);
+    }
+  } catch (error) {
+    console.log(error);
+    return response.redirect(`/quiz/manage/${request.params.id}/edit`);
+  }
+})
 
 app.get(
   "/quiz/manage/:id/newQuestion",
@@ -533,6 +592,7 @@ app.get(
       return response.redirect(request.headers.referer);
     }
     response.render("playerHome", {
+      Name: request.user.userId,
       csrfToken: request.csrfToken(),
     });
   }
@@ -551,6 +611,9 @@ app.post(
     try {
       if (quiz == null) {
         throw "Wrong Key";
+      }
+      if(quiz.status == 0) {
+        throw " Quiz has not yet started. Please wait"
       }
       const user = await User.findOne({where: {userId: request.user.userId, quizId: quiz.id}})
       if(user == null) {
@@ -614,12 +677,22 @@ app.get(
     if (userResponse != null) {
       noOfHints = userResponse.hintsUsed;
     }
+
+    const responses = await Response.findAll({where: {userId: request.user.id, status: true}});
+    const maxScore = quiz.score;
+    const penalty = quiz.penalty;
+    let score = 0;
+    for (let j = 0; j < responses.length; j++) {
+        score = score + maxScore - penalty * responses[j].hintsUsed;
+    }
     response.render("question", {
       question,
       quiz,
       questions,
       quizKey: quiz.key,
       noOfHints,
+      score,
+      questionValue: maxScore - penalty * noOfHints,
       startTime: startTime.date.toLocaleString(),
       csrfToken: request.csrfToken(),
     });
@@ -764,8 +837,9 @@ app.get(
       userpkIds[i] = users[i].id;
       users[i].score = 0;
       users[i].time = 0; // time in milliseconds/10
+      users[i].penalty = 0;
     }
-    console.log("===================", userpkIds);
+    //console.log("===================", userpkIds);
     const responses = await Response.findAll({
       where: {
         status: true,
@@ -782,6 +856,7 @@ app.get(
       for (let j = 0; j < responses.length; j++) {
         if (responses[j].userId == users[i].id) {
           users[i].score = users[i].score + maxScore - penalty * responses[j].hintsUsed;
+          users[i].penalty = users[i].penalty + penalty * responses[j].hintsUsed;
           if(users[i].time < responses[j].completionTime) {
             users[i].time = responses[j].completionTime/100
           }
@@ -800,7 +875,7 @@ app.get(
       seconds = (distance % (1000 * 60)) / 1000;
       users[i].time = (hours? hours + "h " : "") + (minutes? minutes + "m " : "") + seconds + "s ";
     }
-    console.log(users);
+    //console.log(users);
     response.render("leaderboard", {
       users,
       csrfToken: request.csrfToken(),
@@ -816,7 +891,7 @@ app.get(
       request.flash("error", "Admin cannot access player page");
       return response.redirect(request.headers.referer);
     }
-    const responses = await Response.findAll({where: {userId: request.user.id}});
+    const responses = await Response.findAll({where: {userId: request.user.id, status: true}});
 
     const quiz = await Quiz.findByPk(request.params.id);
     const maxScore = quiz.score;

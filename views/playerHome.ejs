@@ -6,13 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content= "<%= csrfToken %>">
     <link href="/css/styles.css" rel="stylesheet" />
-    <title>COSC Quiz</title>
+    <title>Decipher</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="playerhome">
     <%- include('userheader.ejs') %>
     <div class="grid grid-cols-6">
         <div class="col-start-3 col-span-2">
+          <h3 class="text-xl centerElement py-1">Welcome <%= Name %></h3>
           <h6 class="py-4 text-lg">Enter the key to start the quiz</h6>
           <form action="/findQuiz" method="post">
             <% if(messages && messages.error && messages.error.length > 0)  { %>

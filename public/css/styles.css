@@ -80,8 +80,9 @@ td {
 
 
 .flash-success {
-  background-color: rgb(60, 255, 0);
+  background-color: rgb(70, 233, 21);
   font-weight: bold;
+  color: black;
   margin-top: 10px;
   padding: 3px;
   width: fit-content;
@@ -90,6 +91,7 @@ td {
 .flash-error {
   background-color: rgb(250, 7, 7);
   font-weight: bold;
+  columns: black;
   margin-top: 10px;
   padding: 3px;
   width: fit-content;
@@ -103,13 +105,6 @@ td {
 }
 
 .playerhome{
-  background-image: url('bg.png');
-    background-repeat: no-repeat;
-    background-size: cover;
-    color: #FACA15;
-}
-
-.thankyoy{
   background-image: url('bg.png');
     background-repeat: no-repeat;
     background-size: cover;
@@ -132,4 +127,28 @@ border-left: 6px solid #FACA15;
   left: 10%;
   margin-left: -3px;
   
+}
+
+.centerQuestion {
+  position: relative;
+    left:10%;
+    top:20%;
+}
+
+.shakeDiv {
+  /* Start the shake animation and make the animation last for 0.5 seconds */
+  animation: shake 0.5s;
+
+  /* When the animation is finished, start again */
+  animation-iteration-count: 1;
+  overflow-x: hidden;
+}
+
+@keyframes shake {
+  0% { transform: translate(7px); }
+  20% { transform: translate(-7px) ; }
+  40% { transform: translate(7px); }
+  60% { transform: translate(-7px) ; }
+  80% { transform: translate(7px) ; }
+  100% { transform: translate(-7px); }
 }
