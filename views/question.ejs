@@ -68,7 +68,7 @@
             <div >
                 <ul class="list-none" style="list-style-type: disc;">
                     <% for(var i=0; i < questions.length; i++) { %>
-                        <li class="voter px-10 py-3" >
+                        <li class="voter px-8 py-3" >
                             <a href="/quiz/<%= quizKey %>/question/<%= questions[i].id %>">Question <%= i+1 %></a>
                         </li>
                         <% } %>
@@ -97,17 +97,26 @@
                 <% } %>
                 <% let hints = question.hints.split("|~|"); %>
                 <div class="py-2">
-                    <h3 class="text-xl text-black-900 font-bold"><%= question.title%></h3>
+                    <% if(question.title.split("\r\n").length==1) { %>
+                        <h3 class="text-xl font-bold"><%= question.title%></h3>
+                    <% } else { %>
+                        <% let questionParts = question.title.split("\r\n"); %>
+                        <ol>
+                        <% for(var i=0; i < questionParts.length; i++) { %>
+                            <li class="text-xl font-bold"><%= i+1 %>. <%= questionParts[i] %></li>
+                        <% } %>
+                        </ol>
+                    <% } %>
                     <% for(var i=0; i < noOfHints; i++) { %>
                         <p>Hint <%= i+1 %>: <%= hints[i] %></p>
                     <% } %>
                 </div>
                 <div class="py-2">
                     <label for="answer">Answer:</label>
-                    <input type="text" name="answer" class="border border-gray-300 text-gray-900 rounded p-2 w-full">
+                    <input type="text" name="answer" class="border border-gray-300 rounded p-2 w-full">
                 </div>
                 <div class="py-3 centerElement"> 
-                    <button type="button" onclick="fetchHint(<%= question.id %>)" value="Hint" class="tex>t-white bg-yellow-400 hover:bg-yellow-800 font-medium text-black rounded px-5 py-2">Hint</button>
+                    <button type="button" onclick="fetchHint(<%= question.id %>)" value="Hint" class="text-white bg-yellow-400 hover:bg-yellow-800 font-medium text-black rounded px-5 py-2">Hint</button>
                 </div>
                 <div class="py-3 centerElement"> 
                     <button type="submit" class="text-white bg-green-600 hover:bg-green-800 font-medium rounded px-5 py-2">Submit</button>        
